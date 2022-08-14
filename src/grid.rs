@@ -16,7 +16,6 @@ impl Plugin for GridPlugin {
 pub struct Layer(pub f32);
 
 impl Layer {
-    pub const BACKGROUND: Self = Self(1.0);
     pub const FOREGROUND: Self = Self(5.0);
     pub const UI: Self = Self(9.0);
 }
