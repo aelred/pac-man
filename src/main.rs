@@ -1,6 +1,8 @@
 mod diagnostics;
 mod food;
+mod game_over;
 mod grid;
+mod layout;
 mod level;
 mod movement;
 mod player;
@@ -19,6 +21,8 @@ use crate::ui::UIPlugin;
 use bevy::prelude::*;
 use bevy::render::camera::{DepthCalculation, ScalingMode};
 use bevy::render::texture::ImageSettings;
+use game_over::GameOverPlugin;
+use layout::LayoutPlugin;
 
 fn main() {
     App::new()
@@ -39,6 +43,8 @@ fn main() {
         .add_plugin(ScorePlugin)
         .add_plugin(MovementPlugin)
         .add_plugin(LevelPlugin)
+        .add_plugin(GameOverPlugin)
+        .add_plugin(LayoutPlugin)
         .run();
 }
 

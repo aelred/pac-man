@@ -1,5 +1,5 @@
 use crate::grid::{GridLocation, GridMoving};
-use crate::level::Layout;
+use crate::layout::Layout;
 use crate::movement::{Collides, Dir};
 use bevy::prelude::*;
 

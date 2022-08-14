@@ -1,6 +1,8 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
+use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
+
+use crate::game_over::PlayerDied;
 
 pub struct InspectorPlugin;
 
@@ -13,7 +15,8 @@ impl Plugin for InspectorPlugin {
                 enabled: false,
                 ..default()
             })
-            .add_system(toggle_inspector);
+            .add_system(toggle_inspector)
+            .add_system(trigger_death);
     }
 }
 
@@ -23,5 +26,11 @@ fn toggle_inspector(
 ) {
     if keyboard_input.just_pressed(KeyCode::Grave) {
         inspector_params.enabled = !inspector_params.enabled;
+    }
+}
+
+fn trigger_death(keyboard_input: Res<Input<KeyCode>>, mut death_events: EventWriter<PlayerDied>) {
+    if keyboard_input.just_pressed(KeyCode::Period) {
+        death_events.send(PlayerDied);
     }
 }

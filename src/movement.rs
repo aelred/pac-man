@@ -1,5 +1,5 @@
 use crate::grid::{GridLocation, GridMoving};
-use crate::level::{Layout, Tile};
+use crate::layout::{Layout, Tile};
 use crate::player::PlayerMovement;
 use crate::WIDTH_TILES;
 use bevy::prelude::*;
