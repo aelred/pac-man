@@ -70,7 +70,7 @@ impl GridLocation {
         }
     }
 
-    fn to_vec2(&self) -> Vec2 {
+    fn to_vec2(self) -> Vec2 {
         Vec2::new(self.x as f32, self.y as f32)
     }
 }

@@ -148,7 +148,7 @@ fn setup_background(
                 0.0,
             )),
             sprite: TextureAtlasSprite::new(background),
-            texture_atlas: background_handle.clone(),
+            texture_atlas: background_handle,
             ..default()
         })
         .insert(Name::new("Background"));
@@ -188,12 +188,12 @@ fn spawn_level_entities(bldr: &mut ChildBuilder, layout: &Layout, level_assets: 
 
             match layout.get(&loc) {
                 Some(Tile::Dot) => {
-                    spawn_food(bldr, loc, "Dot", 0, &level_assets, 10);
+                    spawn_food(bldr, loc, "Dot", 0, level_assets, 10);
                 }
                 Some(Tile::Energizer) => {
-                    spawn_food(bldr, loc, "Energizer", 1, &level_assets, 50);
+                    spawn_food(bldr, loc, "Energizer", 1, level_assets, 50);
                 }
-                Some(Tile::PacMan) => spawn_pac_man(bldr, loc, &level_assets),
+                Some(Tile::PacMan) => spawn_pac_man(bldr, loc, level_assets),
                 Some(Tile::Blinky) => spawn_ghost(bldr, loc, "Blinky", &level_assets.blinky),
                 Some(Tile::Pinky) => spawn_ghost(bldr, loc, "Pinky", &level_assets.pinky),
                 Some(Tile::Inky) => spawn_ghost(bldr, loc, "Inky", &level_assets.inky),

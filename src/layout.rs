@@ -27,9 +27,9 @@ impl Layout {
 
         let mut img_data = level_bmp[offset..].iter();
 
-        for y in 0..HEIGHT_TILES {
-            for x in 0..WIDTH_TILES {
-                let tile = match img_data.next().unwrap() {
+        for row in tiles.iter_mut() {
+            for tile in row.iter_mut() {
+                *tile = match img_data.next().unwrap() {
                     0x01 => Some(Tile::Wall),
                     0x02 => Some(Tile::Dot),
                     0x04 => Some(Tile::Energizer),
@@ -41,7 +41,6 @@ impl Layout {
                     0x0A => Some(Tile::Clyde),
                     _ => None,
                 };
-                tiles[x][y] = tile;
             }
         }
 
