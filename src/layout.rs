@@ -13,11 +13,11 @@ impl Plugin for LayoutPlugin {
     }
 }
 
-pub struct Layout([[Option<Tile>; HEIGHT_TILES]; WIDTH_TILES]);
+pub struct Layout([[Option<Tile>; WIDTH_TILES]; HEIGHT_TILES]);
 
 impl Layout {
     fn load() -> Layout {
-        let mut tiles = [[None; HEIGHT_TILES]; WIDTH_TILES];
+        let mut tiles = [[None; WIDTH_TILES]; HEIGHT_TILES];
 
         let level_bmp = include_bytes!("../assets/level.bmp");
 
@@ -48,7 +48,7 @@ impl Layout {
     }
 
     pub fn get(&self, loc: &GridLocation) -> Option<Tile> {
-        self.0[(loc.x.max(0) as usize).min(WIDTH_TILES - 1)][loc.y as usize]
+        self.0[loc.y as usize][(loc.x.max(0) as usize).min(WIDTH_TILES - 1)]
     }
 }
 
