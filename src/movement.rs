@@ -67,14 +67,19 @@ impl Default for AnimationTimer {
     }
 }
 
+#[derive(Component, Deref, DerefMut)]
+pub struct StartLocation(GridLocation);
+
 pub fn moving_left(location: GridLocation) -> impl Bundle {
     (
+        location,
         Dir::Left,
         GridMoving {
             destination: location.shift(Dir::Left),
             progress: 0.5,
             duration: MOVE_DURATION,
         },
+        StartLocation(location),
     )
 }
 

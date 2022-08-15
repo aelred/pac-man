@@ -1,9 +1,8 @@
 use crate::food::{Eater, Food};
-use crate::game_over::PlayerDied;
 use crate::grid::{Grid, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
-use crate::movement::{moving_left, Collides, MoveRandom, MovementBundle};
-use crate::player::Player;
+use crate::movement::{moving_left, Collides, MoveRandom, MovementBundle, StartLocation};
+use crate::player::{Deadly, Player, PlayerDied};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
 use bevy::utils::HashSet;
@@ -164,17 +163,19 @@ fn create_level(mut commands: Commands, layout: Res<Layout>, level_assets: Res<L
 fn reset_level_when_player_dies(
     mut commands: Commands,
     mut died_events: EventReader<PlayerDied>,
-    layout: Res<Layout>,
-    level_assets: Res<LevelAssets>,
-    level: Query<Entity, With<Level>>,
+    query: Query<(Entity, &StartLocation)>,
+    mut player: Query<&mut Player>,
 ) {
     for _ in died_events.iter() {
-        let level = level.get_single().unwrap();
+        for (entity, start_location) in &query {
+            commands
+                .entity(entity)
+                .insert_bundle(moving_left(**start_location));
+        }
 
-        commands.entity(level).despawn_descendants();
-        commands
-            .entity(level)
-            .with_children(|bldr| spawn_level_entities(bldr, &layout, &level_assets));
+        for mut player in &mut player {
+            player.next_dir = None;
+        }
     }
 }
 
@@ -274,5 +275,6 @@ fn spawn_ghost(
             ..default()
         })
         .insert_bundle(moving_left(location))
+        .insert(Deadly)
         .insert(MoveRandom);
 }

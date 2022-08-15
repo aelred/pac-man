@@ -7,18 +7,25 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(player_controls)
-            .add_system(move_player.label(PlayerMovement).after(player_controls));
+        app.add_event::<PlayerDied>()
+            .add_system(player_controls)
+            .add_system(move_player.label(PlayerMovement).after(player_controls))
+            .add_system(die_when_touching_deadly);
     }
 }
 
 #[derive(Clone, SystemLabel)]
 pub struct PlayerMovement;
 
+#[derive(Component)]
+pub struct Deadly;
+
 #[derive(Component, Default)]
 pub struct Player {
-    next_dir: Option<Dir>,
+    pub next_dir: Option<Dir>,
 }
+
+pub struct PlayerDied;
 
 fn player_controls(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Player>) {
     let mut player = query.single_mut();
@@ -46,6 +53,21 @@ fn move_player(
             if !collides.at(&layout, &location.shift(next)) {
                 *dir = next;
             }
+        }
+    }
+}
+
+fn die_when_touching_deadly(
+    player: Query<&GridLocation, With<Player>>,
+    deadlies: Query<&GridLocation, With<Deadly>>,
+    mut death_events: EventWriter<PlayerDied>,
+) {
+    let player = player.single();
+
+    for deadly in &deadlies {
+        if player == deadly {
+            death_events.send(PlayerDied);
+            return;
         }
     }
 }

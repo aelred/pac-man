@@ -2,7 +2,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 
-use crate::game_over::PlayerDied;
+use crate::player::PlayerDied;
 
 pub struct InspectorPlugin;
 
