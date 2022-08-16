@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 use bevy::utils::HashMap;
 use bevy_inspector_egui::Inspectable;
 use lazy_static::lazy_static;

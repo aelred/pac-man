@@ -7,7 +7,8 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<PlayerDied>()
+        app.init_resource::<Lives>()
+            .add_event::<PlayerDied>()
             .add_system(player_controls)
             .add_system(move_player.label(PlayerMovement).after(player_controls))
             .add_system(die_when_touching_deadly);
@@ -23,6 +24,15 @@ pub struct Deadly;
 #[derive(Component, Default)]
 pub struct Player {
     pub next_dir: Option<Dir>,
+}
+
+#[derive(Deref, DerefMut)]
+pub struct Lives(usize);
+
+impl Default for Lives {
+    fn default() -> Self {
+        Self(5)
+    }
 }
 
 pub struct PlayerDied;

@@ -16,6 +16,7 @@ impl Plugin for GridPlugin {
 pub struct Layer(pub f32);
 
 impl Layer {
+    pub const BACKGROUND: Self = Self(1.0);
     pub const FOREGROUND: Self = Self(5.0);
     pub const UI: Self = Self(9.0);
 }
@@ -39,6 +40,12 @@ pub struct GridBundle {
 pub struct Grid {
     pub size: Vec2,
     pub offset: Vec2,
+}
+
+impl Grid {
+    pub fn to_vec2(&self, location: GridLocation) -> Vec2 {
+        self.offset + self.size * location.to_vec2()
+    }
 }
 
 impl Default for Grid {

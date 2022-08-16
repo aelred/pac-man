@@ -1,10 +1,10 @@
 use crate::food::{Eater, Food};
-use crate::grid::{Grid, GridLocation, Layer};
+use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
 use crate::movement::{moving_left, Collides, MoveRandom, MovementBundle, StartLocation};
 use crate::player::{Deadly, Player, PlayerDied};
 use bevy::prelude::*;
-use bevy::sprite::Rect;
+use bevy::sprite::{Anchor, Rect};
 use bevy::utils::HashSet;
 
 pub const WIDTH_TILES: usize = 28;
@@ -18,7 +18,7 @@ pub const GRID_SIZE: f32 = 8.0;
 
 pub const GRID: Grid = Grid {
     size: Vec2::splat(GRID_SIZE),
-    offset: Vec2::new(GRID_SIZE / 2.0 - WIDTH / 2.0, -HEIGHT / 2.0),
+    offset: Vec2::ZERO,
 };
 
 pub struct LevelPlugin;
@@ -128,26 +128,34 @@ fn setup_background(
     let mut background_atlas = TextureAtlas::new_empty(sheet, Vec2::new(680.0, 248.0));
 
     let start = Vec2::new(228.0, 0.0);
-    let background = background_atlas.add_texture(Rect {
+
+    const BACKGROUND_HEIGHT: f32 = HEIGHT - (TOP_MARGIN + BOTTOM_MARGIN) as f32 * GRID_SIZE;
+
+    background_atlas.add_texture(Rect {
         min: start,
-        max: start
-            + Vec2::new(
-                WIDTH,
-                HEIGHT - (TOP_MARGIN + BOTTOM_MARGIN) as f32 * GRID_SIZE,
-            ),
+        max: start + Vec2::new(WIDTH, BACKGROUND_HEIGHT),
     });
 
     let background_handle = texture_atlases.add(background_atlas);
 
     commands
         .spawn_bundle(SpriteSheetBundle {
-            transform: Transform::from_translation(Vec3::new(
-                0.0,
-                -GRID_SIZE * BOTTOM_MARGIN as f32 / 2.0,
-                0.0,
-            )),
-            sprite: TextureAtlasSprite::new(background),
             texture_atlas: background_handle,
+            ..default()
+        })
+        .insert_bundle(GridBundle {
+            grid: Grid {
+                size: Vec2::splat(GRID_SIZE),
+                offset: Vec2::new(
+                    (WIDTH - GRID_SIZE) / 2.0,
+                    (BACKGROUND_HEIGHT - GRID_SIZE) / 2.0,
+                ),
+            },
+            location: GridLocation {
+                x: 0,
+                y: BOTTOM_MARGIN as isize,
+            },
+            layer: Layer::BACKGROUND,
             ..default()
         })
         .insert(Name::new("Background"));
