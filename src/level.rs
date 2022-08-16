@@ -4,7 +4,7 @@ use crate::layout::{Layout, Tile};
 use crate::movement::{moving_left, Collides, MoveRandom, MovementBundle, StartLocation};
 use crate::player::{Deadly, Player, PlayerDied};
 use bevy::prelude::*;
-use bevy::sprite::{Anchor, Rect};
+use bevy::sprite::Rect;
 use bevy::utils::HashSet;
 
 pub const WIDTH_TILES: usize = 28;

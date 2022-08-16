@@ -11,7 +11,8 @@ impl Plugin for PlayerPlugin {
             .add_event::<PlayerDied>()
             .add_system(player_controls)
             .add_system(move_player.label(PlayerMovement).after(player_controls))
-            .add_system(die_when_touching_deadly);
+            .add_system(die_when_touching_deadly)
+            .add_system(lose_life_when_dying);
     }
 }
 
@@ -79,5 +80,11 @@ fn die_when_touching_deadly(
             death_events.send(PlayerDied);
             return;
         }
+    }
+}
+
+fn lose_life_when_dying(mut deaths: EventReader<PlayerDied>, mut lives: ResMut<Lives>) {
+    for _ in deaths.iter() {
+        **lives -= 1;
     }
 }

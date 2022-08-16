@@ -166,7 +166,7 @@ fn update_lives_display(
         match num_displayed_lives.cmp(&num_lives) {
             Ordering::Greater => {
                 for lost_life in &children.unwrap()[num_lives..] {
-                    commands.entity(*lost_life).despawn();
+                    commands.entity(*lost_life).despawn_recursive();
                 }
             }
             Ordering::Less => commands.entity(entity).add_children(|bldr| {
