@@ -1,5 +1,6 @@
 mod diagnostics;
 mod food;
+mod from_env;
 mod grid;
 mod layout;
 mod level;
@@ -21,18 +22,20 @@ use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy::render::camera::{DepthCalculation, ScalingMode};
 use bevy::render::texture::ImageSettings;
+use from_env::FromEnv;
 use layout::LayoutPlugin;
 use level::GRID_SIZE;
 
 fn main() {
     App::new()
-        .insert_resource(WindowDescriptor {
-            width: get_window_width().unwrap_or(WIDTH * SCALE),
-            height: get_window_height().unwrap_or(HEIGHT * SCALE),
-            position: get_window_position().unwrap_or(WindowPosition::Automatic),
-            decorations: get_window_decorations().unwrap_or(true),
-            ..default()
-        })
+        .insert_resource(
+            WindowDescriptor {
+                width: WIDTH * SCALE,
+                height: HEIGHT * SCALE,
+                ..default()
+            }
+            .with_env_overrides(),
+        )
         .insert_resource(ImageSettings::default_nearest())
         .insert_resource(ClearColor(Color::BLACK))
         .add_startup_system(setup_camera)
@@ -48,24 +51,6 @@ fn main() {
         .add_plugin(LevelPlugin)
         .add_plugin(LayoutPlugin)
         .run();
-}
-
-fn get_window_width() -> Option<f32> {
-    std::env::var("WINDOW_WIDTH").ok()?.parse().ok()
-}
-
-fn get_window_height() -> Option<f32> {
-    std::env::var("WINDOW_HEIGHT").ok()?.parse().ok()
-}
-
-fn get_window_decorations() -> Option<bool> {
-    std::env::var("WINDOW_DECORATIONS").ok()?.parse().ok()
-}
-
-fn get_window_position() -> Option<WindowPosition> {
-    let window_x = std::env::var("WINDOW_X").ok()?.parse().ok()?;
-    let window_y = std::env::var("WINDOW_Y").ok()?.parse().ok()?;
-    Some(WindowPosition::At(Vec2::new(window_x, window_y)))
 }
 
 fn setup_camera(mut commands: Commands) {
