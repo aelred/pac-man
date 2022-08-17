@@ -1,6 +1,5 @@
-use crate::grid::{GridLocation, GridMoving};
-use crate::layout::Layout;
-use crate::movement::{Collides, Dir};
+use crate::grid::GridLocation;
+use crate::movement::{Dir, NextDir};
 use bevy::prelude::*;
 
 pub struct PlayerPlugin;
@@ -10,22 +9,16 @@ impl Plugin for PlayerPlugin {
         app.init_resource::<Lives>()
             .add_event::<PlayerDied>()
             .add_system(player_controls)
-            .add_system(move_player.label(PlayerMovement).after(player_controls))
             .add_system(die_when_touching_deadly)
             .add_system(lose_life_when_dying);
     }
 }
 
-#[derive(Clone, SystemLabel)]
-pub struct PlayerMovement;
-
 #[derive(Component)]
 pub struct Deadly;
 
-#[derive(Component, Default)]
-pub struct Player {
-    pub next_dir: Option<Dir>,
-}
+#[derive(Component)]
+pub struct Player;
 
 #[derive(Deref, DerefMut)]
 pub struct Lives(usize);
@@ -38,33 +31,23 @@ impl Default for Lives {
 
 pub struct PlayerDied;
 
-fn player_controls(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Player>) {
+fn player_controls(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<&mut NextDir, With<Player>>,
+) {
     let mut player = query.single_mut();
 
     if keyboard_input.pressed(KeyCode::Left) {
-        player.next_dir = Some(Dir::Left);
+        **player = Some(Dir::Left);
     }
     if keyboard_input.pressed(KeyCode::Right) {
-        player.next_dir = Some(Dir::Right);
+        **player = Some(Dir::Right);
     }
     if keyboard_input.pressed(KeyCode::Down) {
-        player.next_dir = Some(Dir::Down);
+        **player = Some(Dir::Down);
     }
     if keyboard_input.pressed(KeyCode::Up) {
-        player.next_dir = Some(Dir::Up);
-    }
-}
-
-fn move_player(
-    layout: Res<Layout>,
-    mut query: Query<(&GridLocation, &Collides, &Player, &mut Dir), Without<GridMoving>>,
-) {
-    for (location, collides, player, mut dir) in &mut query {
-        if let Some(next) = player.next_dir {
-            if !collides.at(&layout, &location.shift(next)) {
-                *dir = next;
-            }
-        }
+        **player = Some(Dir::Up);
     }
 }
 

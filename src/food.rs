@@ -1,5 +1,5 @@
 use crate::grid::GridLocation;
-use crate::player::PlayerMovement;
+use crate::movement::SetDir;
 use crate::score::{Score, UpdateScore};
 use bevy::prelude::*;
 
@@ -7,7 +7,7 @@ pub struct FoodPlugin;
 
 impl Plugin for FoodPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(eat.label(UpdateScore).before(PlayerMovement));
+        app.add_system(eat.label(UpdateScore).before(SetDir));
     }
 }
 

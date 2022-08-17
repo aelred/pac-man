@@ -1,7 +1,8 @@
 use crate::food::{Eater, Food};
+use crate::ghost::Target;
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
-use crate::movement::{moving_left, Collides, MoveRandom, MovementBundle, StartLocation};
+use crate::movement::{moving_left, Collides, MovementBundle, NextDir, StartLocation};
 use crate::player::{Deadly, Player, PlayerDied};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
@@ -172,7 +173,7 @@ fn reset_level_when_player_dies(
     mut commands: Commands,
     mut died_events: EventReader<PlayerDied>,
     query: Query<(Entity, &StartLocation)>,
-    mut player: Query<&mut Player>,
+    mut player: Query<&mut NextDir, With<Player>>,
 ) {
     for _ in died_events.iter() {
         for (entity, start_location) in &query {
@@ -182,7 +183,7 @@ fn reset_level_when_player_dies(
         }
 
         for mut player in &mut player {
-            player.next_dir = None;
+            **player = None;
         }
     }
 }
@@ -203,10 +204,43 @@ fn spawn_level_entities(bldr: &mut ChildBuilder, layout: &Layout, level_assets: 
                     spawn_food(bldr, loc, "Energizer", 1, level_assets, 50);
                 }
                 Some(Tile::PacMan) => spawn_pac_man(bldr, loc, level_assets),
-                Some(Tile::Blinky) => spawn_ghost(bldr, loc, "Blinky", &level_assets.blinky),
-                Some(Tile::Pinky) => spawn_ghost(bldr, loc, "Pinky", &level_assets.pinky),
-                Some(Tile::Inky) => spawn_ghost(bldr, loc, "Inky", &level_assets.inky),
-                Some(Tile::Clyde) => spawn_ghost(bldr, loc, "Clyde", &level_assets.clyde),
+                Some(Tile::Blinky) => spawn_ghost(
+                    bldr,
+                    loc,
+                    "Blinky",
+                    &level_assets.blinky,
+                    GridLocation {
+                        x: WIDTH_TILES as isize - 3,
+                        y: HEIGHT_TILES as isize - 1,
+                    },
+                ),
+                Some(Tile::Pinky) => spawn_ghost(
+                    bldr,
+                    loc,
+                    "Pinky",
+                    &level_assets.pinky,
+                    GridLocation {
+                        x: 2,
+                        y: HEIGHT_TILES as isize - 1,
+                    },
+                ),
+                Some(Tile::Inky) => spawn_ghost(
+                    bldr,
+                    loc,
+                    "Inky",
+                    &level_assets.inky,
+                    GridLocation { x: 0, y: 0 },
+                ),
+                Some(Tile::Clyde) => spawn_ghost(
+                    bldr,
+                    loc,
+                    "Clyde",
+                    &level_assets.clyde,
+                    GridLocation {
+                        x: WIDTH_TILES as isize - 1,
+                        y: 0,
+                    },
+                ),
                 _ => {}
             }
         }
@@ -239,7 +273,7 @@ fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_asse
             ..default()
         })
         .insert_bundle(moving_left(location))
-        .insert_bundle((Player::default(), Eater));
+        .insert_bundle((NextDir::default(), Player, Eater));
 }
 
 fn spawn_food(
@@ -269,6 +303,7 @@ fn spawn_ghost(
     location: GridLocation,
     name: &'static str,
     atlas: &Handle<TextureAtlas>,
+    target: GridLocation,
 ) {
     commands
         .spawn_bundle(GridEntity {
@@ -279,10 +314,9 @@ fn spawn_ghost(
             ..default()
         })
         .insert_bundle(MovementBundle {
-            collides: Collides(HashSet::from([Tile::Wall])),
+            collides: Collides(HashSet::from([Tile::Wall, Tile::Door])),
             ..default()
         })
         .insert_bundle(moving_left(location))
-        .insert(Deadly)
-        .insert(MoveRandom);
+        .insert_bundle((Deadly, NextDir::default(), Target(target)));
 }

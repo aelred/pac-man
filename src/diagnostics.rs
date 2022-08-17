@@ -1,10 +1,11 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
+use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
 use crate::grid::GridLocation;
 use crate::level::GRID;
+use crate::movement::{Dir, NextDir};
 use crate::player::PlayerDied;
 
 pub struct InspectorPlugin;
@@ -23,7 +24,9 @@ impl Plugin for InspectorPlugin {
             .add_system(toggle_debug_mode)
             .add_system(toggle_inspector)
             .add_system(trigger_death)
-            .add_system(draw_grid);
+            .add_system(draw_grid)
+            .register_inspectable::<NextDir>()
+            .register_inspectable::<Dir>();
     }
 }
 

@@ -1,6 +1,7 @@
 mod diagnostics;
 mod food;
 mod from_env;
+mod ghost;
 mod grid;
 mod layout;
 mod level;
@@ -23,6 +24,7 @@ use bevy::prelude::*;
 use bevy::render::camera::{DepthCalculation, ScalingMode};
 use bevy::render::texture::ImageSettings;
 use from_env::FromEnv;
+use ghost::GhostPlugin;
 use layout::LayoutPlugin;
 use level::GRID_SIZE;
 
@@ -50,6 +52,7 @@ fn main() {
         .add_plugin(MovementPlugin)
         .add_plugin(LevelPlugin)
         .add_plugin(LayoutPlugin)
+        .add_plugin(GhostPlugin)
         .run();
 }
 

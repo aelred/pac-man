@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
-use crate::grid::{Grid, GridBundle, GridLocation, Layer};
-use crate::level::{GRID, GRID_SIZE};
+use crate::grid::{GridBundle, GridLocation, Layer};
+use crate::level::GRID;
 use crate::player::Lives;
 use crate::score::{HighScore, Score, UpdateHighScore, UpdateScore};
 use crate::text::{Align, Text, TextBundle, TextPlugin};
@@ -181,10 +181,7 @@ fn update_lives_display(
                         ..default()
                     })
                     .insert_bundle(GridBundle {
-                        grid: Grid {
-                            size: Vec2::splat(GRID_SIZE * 2.0),
-                            offset: Vec2::splat(GRID_SIZE / 2.0),
-                        },
+                        grid: GRID.center_offset() * 2.0,
                         location: GridLocation {
                             x: new_life as isize,
                             y: 0,
