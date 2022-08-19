@@ -1,3 +1,8 @@
+mod blinky;
+mod clyde;
+mod inky;
+mod pinky;
+
 use std::time::Duration;
 
 use bevy::prelude::*;
@@ -5,10 +10,13 @@ use bevy::prelude::*;
 use crate::{
     grid::{GridLocation, MoveOnGrid},
     layout::Layout,
-    level::{HEIGHT_TILES, WIDTH_TILES},
     movement::{Collides, Dir, NextDir, SetDir},
-    player::Player,
 };
+
+pub use blinky::Blinky;
+pub use clyde::Clyde;
+pub use inky::Inky;
+pub use pinky::Pinky;
 
 pub struct GhostPlugin;
 
@@ -19,10 +27,10 @@ impl Plugin for GhostPlugin {
             .add_system(choose_next_dir.after(SetDir).before(MoveOnGrid))
             .add_system(tick_mode)
             .add_system(scatter)
-            .add_system(blinky_chase)
-            .add_system(pinky_chase)
-            .add_system(inky_chase)
-            .add_system(clyde_chase);
+            .add_system(blinky::chase)
+            .add_system(pinky::chase)
+            .add_system(inky::chase)
+            .add_system(clyde::chase);
     }
 }
 
@@ -45,52 +53,12 @@ const MODE_TABLE: [(Mode, f32); 8] = [
 
 pub trait Ghost: Component + Default {
     const NAME: &'static str;
+    const COLOR: Color;
     const SCATTER: GridLocation;
 }
 
-#[derive(Component, Default)]
-pub struct Blinky;
-
-impl Ghost for Blinky {
-    const NAME: &'static str = "Blinky";
-    const SCATTER: GridLocation = GridLocation {
-        x: WIDTH_TILES as isize - 3,
-        y: HEIGHT_TILES as isize - 1,
-    };
-}
-
-#[derive(Component, Default)]
-pub struct Pinky;
-
-impl Ghost for Pinky {
-    const NAME: &'static str = "Pinky";
-    const SCATTER: GridLocation = GridLocation {
-        x: 2,
-        y: HEIGHT_TILES as isize - 1,
-    };
-}
-
-#[derive(Component, Default)]
-pub struct Inky;
-
-impl Ghost for Inky {
-    const NAME: &'static str = "Inky";
-    const SCATTER: GridLocation = GridLocation { x: 0, y: 0 };
-}
-
-#[derive(Component, Default)]
-pub struct Clyde;
-
-impl Ghost for Clyde {
-    const NAME: &'static str = "Clyde";
-    const SCATTER: GridLocation = GridLocation {
-        x: WIDTH_TILES as isize - 1,
-        y: 0,
-    };
-}
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-enum Mode {
+pub enum Mode {
     Scatter,
     Chase,
 }
@@ -101,7 +69,7 @@ impl Default for Mode {
     }
 }
 
-pub struct ModeTimer {
+struct ModeTimer {
     index: usize,
     timer: Timer,
 }
@@ -142,95 +110,6 @@ fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target)>) {
     for (scatter_target, mut target) in &mut query {
         if **target != **scatter_target {
             **target = **scatter_target;
-        }
-    }
-}
-
-fn blinky_chase(
-    mode: Res<Mode>,
-    mut query: Query<&mut Target, With<Blinky>>,
-    player: Query<&GridLocation, With<Player>>,
-) {
-    if *mode != Mode::Chase {
-        return;
-    }
-
-    for mut target in &mut query {
-        let new_target = *player.get_single().unwrap();
-
-        if **target != new_target {
-            **target = new_target;
-        }
-    }
-}
-
-fn pinky_chase(
-    mode: Res<Mode>,
-    mut query: Query<&mut Target, With<Pinky>>,
-    player: Query<(&GridLocation, &Dir), With<Player>>,
-) {
-    if *mode != Mode::Chase {
-        return;
-    }
-
-    for mut target in &mut query {
-        let (player_loc, player_dir) = player.get_single().unwrap();
-        let new_target = player_loc.shift_by(*player_dir, 4);
-
-        if **target != new_target {
-            **target = new_target;
-        }
-    }
-}
-
-fn inky_chase(
-    mode: Res<Mode>,
-    mut query: Query<&mut Target, With<Inky>>,
-    player: Query<(&GridLocation, &Dir), With<Player>>,
-    blinky: Query<&GridLocation, With<Blinky>>,
-) {
-    if *mode != Mode::Chase {
-        return;
-    }
-
-    for mut target in &mut query {
-        let (player_loc, player_dir) = player.get_single().unwrap();
-        let blinky_loc = blinky.get_single().unwrap();
-
-        let mut new_target = player_loc.shift_by(*player_dir, 2);
-        new_target.x += new_target.x - blinky_loc.x;
-        new_target.y += new_target.y - blinky_loc.y;
-
-        if **target != new_target {
-            **target = new_target;
-        }
-    }
-}
-
-fn clyde_chase(
-    mode: Res<Mode>,
-    mut query: Query<(&GridLocation, &ScatterTarget, &mut Target), With<Clyde>>,
-    player: Query<&GridLocation, With<Player>>,
-) {
-    if *mode != Mode::Chase {
-        return;
-    }
-
-    for (clyde_loc, scatter_target, mut target) in &mut query {
-        let player_loc = player.get_single().unwrap();
-
-        let dist = player_loc
-            .to_unscaled_vec2()
-            .distance_squared(clyde_loc.to_unscaled_vec2());
-
-        let new_target = if dist > 8.0 * 8.0 {
-            player_loc
-        } else {
-            scatter_target
-        };
-
-        if **target != *new_target {
-            **target = *new_target;
         }
     }
 }

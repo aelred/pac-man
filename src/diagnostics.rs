@@ -3,7 +3,8 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
-use crate::grid::GridLocation;
+use crate::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, Target};
+use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
 use crate::movement::{Dir, NextDir};
 use crate::player::PlayerDied;
@@ -25,6 +26,10 @@ impl Plugin for InspectorPlugin {
             .add_system(toggle_inspector)
             .add_system(trigger_death)
             .add_system(draw_grid)
+            .add_system(draw_target::<Blinky>)
+            .add_system(draw_target::<Pinky>)
+            .add_system(draw_target::<Inky>)
+            .add_system(draw_target::<Clyde>)
             .register_inspectable::<NextDir>()
             .register_inspectable::<Dir>();
     }
@@ -55,18 +60,38 @@ fn trigger_death(keyboard_input: Res<Input<KeyCode>>, mut death_events: EventWri
 }
 
 fn draw_grid(debug_mode: Res<DebugMode>, mut lines: ResMut<DebugLines>) {
+    if !debug_mode.0 {
+        return;
+    }
+
     let offset = GRID.size / 2.0;
 
-    if debug_mode.0 {
-        for x in -100..100 {
-            let start = (GRID.to_vec2(GridLocation { x, y: -100 }) + offset).extend(0.0);
-            let end = (GRID.to_vec2(GridLocation { x, y: 100 }) + offset).extend(0.0);
-            lines.line(start, end, 0.0);
-        }
-        for y in -100..100 {
-            let start = (GRID.to_vec2(GridLocation { x: -100, y }) + offset).extend(0.0);
-            let end = (GRID.to_vec2(GridLocation { x: 100, y }) + offset).extend(0.0);
-            lines.line(start, end, 0.0);
-        }
+    for x in -100..100 {
+        let start = (GRID.to_vec2(GridLocation { x, y: -100 }) + offset).extend(0.0);
+        let end = (GRID.to_vec2(GridLocation { x, y: 100 }) + offset).extend(0.0);
+        lines.line(start, end, 0.0);
+    }
+    for y in -100..100 {
+        let start = (GRID.to_vec2(GridLocation { x: -100, y }) + offset).extend(0.0);
+        let end = (GRID.to_vec2(GridLocation { x: 100, y }) + offset).extend(0.0);
+        lines.line(start, end, 0.0);
+    }
+}
+
+fn draw_target<G: Ghost>(
+    debug_mode: Res<DebugMode>,
+    mut lines: ResMut<DebugLines>,
+    query: Query<(&Grid, &Target), With<G>>,
+) {
+    if !debug_mode.0 {
+        return;
+    }
+
+    for (grid, target) in &query {
+        let target = grid.to_vec2(**target).extend(0.0);
+        let x = (Vec2::X * grid.size / 4.0).extend(0.0);
+        let y = (Vec2::Y * grid.size / 4.0).extend(0.0);
+        lines.line_colored(target - x - y, target + x + y, 0.0, G::COLOR);
+        lines.line_colored(target - x + y, target + x - y, 0.0, G::COLOR);
     }
 }
