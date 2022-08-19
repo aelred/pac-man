@@ -1,5 +1,5 @@
 use crate::food::{Eater, Food};
-use crate::ghost::{GhostBundle, ScatterTarget};
+use crate::ghost::{Blinky, Clyde, Ghost, GhostBundle, Inky, Pinky, ScatterTarget};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
 use crate::movement::{moving_left, Collides, MovementBundle, NextDir, StartLocation};
@@ -204,43 +204,10 @@ fn spawn_level_entities(bldr: &mut ChildBuilder, layout: &Layout, level_assets: 
                     spawn_food(bldr, loc, "Energizer", 1, level_assets, 50);
                 }
                 Some(Tile::PacMan) => spawn_pac_man(bldr, loc, level_assets),
-                Some(Tile::Blinky) => spawn_ghost(
-                    bldr,
-                    loc,
-                    "Blinky",
-                    &level_assets.blinky,
-                    GridLocation {
-                        x: WIDTH_TILES as isize - 3,
-                        y: HEIGHT_TILES as isize - 1,
-                    },
-                ),
-                Some(Tile::Pinky) => spawn_ghost(
-                    bldr,
-                    loc,
-                    "Pinky",
-                    &level_assets.pinky,
-                    GridLocation {
-                        x: 2,
-                        y: HEIGHT_TILES as isize - 1,
-                    },
-                ),
-                Some(Tile::Inky) => spawn_ghost(
-                    bldr,
-                    loc,
-                    "Inky",
-                    &level_assets.inky,
-                    GridLocation { x: 0, y: 0 },
-                ),
-                Some(Tile::Clyde) => spawn_ghost(
-                    bldr,
-                    loc,
-                    "Clyde",
-                    &level_assets.clyde,
-                    GridLocation {
-                        x: WIDTH_TILES as isize - 1,
-                        y: 0,
-                    },
-                ),
+                Some(Tile::Blinky) => spawn_ghost::<Blinky>(bldr, loc, &level_assets.blinky),
+                Some(Tile::Pinky) => spawn_ghost::<Pinky>(bldr, loc, &level_assets.pinky),
+                Some(Tile::Inky) => spawn_ghost::<Inky>(bldr, loc, &level_assets.inky),
+                Some(Tile::Clyde) => spawn_ghost::<Clyde>(bldr, loc, &level_assets.clyde),
                 _ => {}
             }
         }
@@ -298,16 +265,14 @@ fn spawn_food(
         .id()
 }
 
-fn spawn_ghost(
+fn spawn_ghost<G: Ghost>(
     commands: &mut ChildBuilder,
     location: GridLocation,
-    name: &'static str,
     atlas: &Handle<TextureAtlas>,
-    target: GridLocation,
 ) {
     commands
         .spawn_bundle(GridEntity {
-            name: Name::new(name),
+            name: Name::new(G::NAME),
             texture_atlas: atlas.clone(),
             grid: GRID,
             location,
@@ -319,8 +284,9 @@ fn spawn_ghost(
         })
         .insert_bundle(moving_left(location))
         .insert_bundle(GhostBundle {
-            scatter_target: ScatterTarget(target),
+            scatter_target: ScatterTarget(G::SCATTER),
             ..default()
         })
-        .insert_bundle((Deadly, NextDir::default()));
+        .insert_bundle((Deadly, NextDir::default()))
+        .insert(G::default());
 }

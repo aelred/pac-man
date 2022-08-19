@@ -86,11 +86,15 @@ pub struct GridLocation {
 
 impl GridLocation {
     pub fn shift(&self, dir: Dir) -> Self {
+        self.shift_by(dir, 1)
+    }
+
+    pub fn shift_by(&self, dir: Dir, amount: isize) -> Self {
         let (dx, dy) = match dir {
-            Dir::Left => (-1, 0),
-            Dir::Right => (1, 0),
-            Dir::Down => (0, -1),
-            Dir::Up => (0, 1),
+            Dir::Left => (-amount, 0),
+            Dir::Right => (amount, 0),
+            Dir::Down => (0, -amount),
+            Dir::Up => (0, amount),
         };
         Self {
             x: self.x + dx,
