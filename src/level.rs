@@ -1,5 +1,5 @@
 use crate::food::{Eater, Food};
-use crate::ghost::Target;
+use crate::ghost::{GhostBundle, ScatterTarget};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
 use crate::movement::{moving_left, Collides, MovementBundle, NextDir, StartLocation};
@@ -318,5 +318,9 @@ fn spawn_ghost(
             ..default()
         })
         .insert_bundle(moving_left(location))
-        .insert_bundle((Deadly, NextDir::default(), Target(target)));
+        .insert_bundle(GhostBundle {
+            scatter_target: ScatterTarget(target),
+            ..default()
+        })
+        .insert_bundle((Deadly, NextDir::default()));
 }

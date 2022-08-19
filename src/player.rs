@@ -68,6 +68,7 @@ fn die_when_touching_deadly(
 
 fn lose_life_when_dying(mut deaths: EventReader<PlayerDied>, mut lives: ResMut<Lives>) {
     for _ in deaths.iter() {
-        **lives -= 1;
+        // saturating_sub until we have game over behaviour
+        **lives = lives.saturating_sub(1);
     }
 }
