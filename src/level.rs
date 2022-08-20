@@ -2,11 +2,10 @@ use crate::food::{Eater, Energizer, Food};
 use crate::ghost::{Blinky, Clyde, GhostBundle, Inky, Personality, Pinky, ScatterTarget};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
-use crate::movement::{moving_left, Collides, MovementBundle, NextDir, StartLocation};
+use crate::movement::{moving_left, MovementBundle, NextDir, StartLocation};
 use crate::player::{Player, PlayerDied};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
-use bevy::utils::HashSet;
 
 pub const WIDTH_TILES: usize = 28;
 pub const HEIGHT_TILES: usize = 36;
@@ -235,10 +234,7 @@ fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_asse
             location,
             ..default()
         })
-        .insert_bundle(MovementBundle {
-            collides: Collides(HashSet::from([Tile::Wall, Tile::Door])),
-            ..default()
-        })
+        .insert_bundle(MovementBundle::default())
         .insert_bundle(moving_left(location))
         .insert_bundle((NextDir::default(), Player, Eater));
 }
@@ -279,10 +275,7 @@ fn spawn_ghost<P: Personality>(
             location,
             ..default()
         })
-        .insert_bundle(MovementBundle {
-            collides: Collides(HashSet::from([Tile::Wall, Tile::Door])),
-            ..default()
-        })
+        .insert_bundle(MovementBundle::default())
         .insert_bundle(moving_left(location))
         .insert_bundle(GhostBundle {
             scatter_target: ScatterTarget(P::SCATTER),

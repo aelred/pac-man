@@ -50,6 +50,10 @@ impl Layout {
     pub fn get(&self, loc: &GridLocation) -> Option<Tile> {
         self.0[loc.y as usize][(loc.x.max(0) as usize).min(WIDTH_TILES - 1)]
     }
+
+    pub fn collides(&self, loc: &GridLocation) -> bool {
+        self.get(loc) == Some(Tile::Wall)
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]

@@ -11,7 +11,7 @@ use rand::seq::SliceRandom;
 use crate::{
     grid::{GridLocation, MoveOnGrid},
     layout::Layout,
-    movement::{Collides, Dir, NextDir, SetDir},
+    movement::{Dir, NextDir, SetDir},
 };
 
 pub use blinky::Blinky;
@@ -135,19 +135,16 @@ fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target)>) {
 fn frightened(
     mode: Res<Mode>,
     layout: Res<Layout>,
-    mut query: Query<
-        (&Dir, &mut NextDir, &GridLocation, &Collides),
-        (With<Ghost>, Changed<GridLocation>),
-    >,
+    mut query: Query<(&Dir, &mut NextDir, &GridLocation), (With<Ghost>, Changed<GridLocation>)>,
 ) {
     if *mode != Mode::Frightened {
         return;
     }
 
-    for (dir, mut next_dir, loc, collides) in &mut query {
+    for (dir, mut next_dir, loc) in &mut query {
         let next_loc = loc.shift(*dir);
 
-        if collides.at(&layout, &next_loc) {
+        if layout.collides(&next_loc) {
             continue;
         }
 
@@ -155,7 +152,7 @@ fn frightened(
 
         for candidate_dir in std::iter::once(random_dir).chain(DIRECTIONS) {
             let candidate_loc = next_loc.shift(candidate_dir);
-            let collision = collides.at(&layout, &candidate_loc);
+            let collision = layout.collides(&candidate_loc);
 
             if !collision && candidate_loc != *loc {
                 **next_dir = Some(candidate_dir);
@@ -169,19 +166,16 @@ fn frightened(
 fn choose_next_dir(
     mode: Res<Mode>,
     layout: Res<Layout>,
-    mut query: Query<
-        (&Dir, &mut NextDir, &GridLocation, &Target, &Collides),
-        Changed<GridLocation>,
-    >,
+    mut query: Query<(&Dir, &mut NextDir, &GridLocation, &Target), Changed<GridLocation>>,
 ) {
     if *mode == Mode::Frightened {
         return;
     }
 
-    for (dir, mut next_dir, loc, target, collides) in &mut query {
+    for (dir, mut next_dir, loc, target) in &mut query {
         let next_loc = loc.shift(*dir);
 
-        if collides.at(&layout, &next_loc) {
+        if layout.collides(&next_loc) {
             continue;
         }
 
@@ -189,7 +183,7 @@ fn choose_next_dir(
 
         for candidate_dir in DIRECTIONS {
             let candidate_loc = next_loc.shift(candidate_dir);
-            let collision = collides.at(&layout, &candidate_loc);
+            let collision = layout.collides(&candidate_loc);
 
             let distance = candidate_loc
                 .to_unscaled_vec2()

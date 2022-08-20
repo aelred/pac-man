@@ -1,8 +1,7 @@
 use crate::grid::{GridLocation, GridMoving};
-use crate::layout::{Layout, Tile};
+use crate::layout::Layout;
 use crate::WIDTH_TILES;
 use bevy::prelude::*;
-use bevy::utils::HashSet;
 use bevy_inspector_egui::Inspectable;
 use std::time::Duration;
 
@@ -26,7 +25,6 @@ pub struct SetDir;
 #[derive(Bundle, Default)]
 pub struct MovementBundle {
     pub animation_timer: AnimationTimer,
-    pub collides: Collides,
 }
 
 #[derive(Component, Copy, Clone, Eq, PartialEq, Debug, Inspectable)]
@@ -39,15 +37,6 @@ pub enum Dir {
 
 #[derive(Debug, Component, Default, Deref, DerefMut, Inspectable)]
 pub struct NextDir(Option<Dir>);
-
-#[derive(Component, Default, Deref, DerefMut)]
-pub struct Collides(pub HashSet<Tile>);
-
-impl Collides {
-    pub fn at(&self, layout: &Layout, loc: &GridLocation) -> bool {
-        layout.get(loc).map_or(false, |tile| self.contains(&tile))
-    }
-}
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
@@ -77,11 +66,11 @@ pub fn moving_left(location: GridLocation) -> impl Bundle {
 fn move_dir(
     mut commands: Commands,
     layout: Res<Layout>,
-    mut query: Query<(Entity, &GridLocation, &Collides, &Dir), Without<GridMoving>>,
+    mut query: Query<(Entity, &GridLocation, &Dir), Without<GridMoving>>,
 ) {
-    for (entity, location, collides, dir) in &mut query {
+    for (entity, location, dir) in &mut query {
         let new_loc = location.shift(*dir);
-        if !collides.at(&layout, &new_loc) {
+        if !layout.collides(&new_loc) {
             commands.entity(entity).insert(GridMoving {
                 destination: new_loc,
                 duration: MOVE_DURATION,
@@ -93,11 +82,11 @@ fn move_dir(
 
 fn change_to_next_dir(
     layout: Res<Layout>,
-    mut query: Query<(&GridLocation, &Collides, &NextDir, &mut Dir), Without<GridMoving>>,
+    mut query: Query<(&GridLocation, &NextDir, &mut Dir), Without<GridMoving>>,
 ) {
-    for (location, collides, next, mut dir) in &mut query {
+    for (location, next, mut dir) in &mut query {
         if let Some(next) = next.0 {
-            if !collides.at(&layout, &location.shift(next)) {
+            if !layout.collides(&location.shift(next)) {
                 *dir = next;
             }
         }
