@@ -2,12 +2,12 @@ use bevy::prelude::*;
 
 use crate::{grid::GridLocation, level::WIDTH_TILES, movement::Dir, player::Player};
 
-use super::{blinky::Blinky, Ghost, Mode, Target};
+use super::{blinky::Blinky, Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Inky;
 
-impl Ghost for Inky {
+impl Personality for Inky {
     const NAME: &'static str = "Inky";
     const COLOR: Color = Color::CYAN;
     const SCATTER: GridLocation = GridLocation {

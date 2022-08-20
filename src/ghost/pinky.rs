@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
-use crate::{grid::GridLocation, movement::Dir, player::Player, level::HEIGHT_TILES};
+use crate::{grid::GridLocation, level::HEIGHT_TILES, movement::Dir, player::Player};
 
-use super::{Mode, Target, Ghost};
+use super::{Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Pinky;
 
-impl Ghost for Pinky {
+impl Personality for Pinky {
     const NAME: &'static str = "Pinky";
     const COLOR: Color = Color::rgb(1.0, 0.72, 1.0);
     const SCATTER: GridLocation = GridLocation {

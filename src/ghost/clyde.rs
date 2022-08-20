@@ -2,12 +2,12 @@ use bevy::prelude::*;
 
 use crate::{grid::GridLocation, player::Player};
 
-use super::{Ghost, Mode, Target};
+use super::{Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Clyde;
 
-impl Ghost for Clyde {
+impl Personality for Clyde {
     const NAME: &'static str = "Clyde";
     const COLOR: Color = Color::rgb(1.0, 0.72, 0.32);
     const SCATTER: GridLocation = GridLocation { x: 0, y: 0 };

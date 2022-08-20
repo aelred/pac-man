@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
-use crate::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, Target};
+use crate::ghost::{Blinky, Clyde, Inky, Personality, Pinky, Target};
 use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
 use crate::movement::{Dir, NextDir};
@@ -78,7 +78,7 @@ fn draw_grid(debug_mode: Res<DebugMode>, mut lines: ResMut<DebugLines>) {
     }
 }
 
-fn draw_target<G: Ghost>(
+fn draw_target<G: Personality>(
     debug_mode: Res<DebugMode>,
     mut lines: ResMut<DebugLines>,
     query: Query<(&Grid, &Target), With<G>>,

@@ -1,3 +1,4 @@
+use crate::ghost::Ghost;
 use crate::grid::GridLocation;
 use crate::movement::{Dir, NextDir};
 use bevy::prelude::*;
@@ -9,13 +10,10 @@ impl Plugin for PlayerPlugin {
         app.init_resource::<Lives>()
             .add_event::<PlayerDied>()
             .add_system(player_controls)
-            .add_system(die_when_touching_deadly)
+            .add_system(die_when_touching_ghost)
             .add_system(lose_life_when_dying);
     }
 }
-
-#[derive(Component)]
-pub struct Deadly;
 
 #[derive(Component)]
 pub struct Player;
@@ -51,15 +49,15 @@ fn player_controls(
     }
 }
 
-fn die_when_touching_deadly(
+fn die_when_touching_ghost(
     player: Query<&GridLocation, With<Player>>,
-    deadlies: Query<&GridLocation, With<Deadly>>,
+    ghosts: Query<&GridLocation, With<Ghost>>,
     mut death_events: EventWriter<PlayerDied>,
 ) {
     let player = player.single();
 
-    for deadly in &deadlies {
-        if player == deadly {
+    for ghost in &ghosts {
+        if player == ghost {
             death_events.send(PlayerDied);
             return;
         }

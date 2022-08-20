@@ -6,12 +6,12 @@ use crate::{
     player::Player,
 };
 
-use super::{Ghost, Mode, Target};
+use super::{Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Blinky;
 
-impl Ghost for Blinky {
+impl Personality for Blinky {
     const NAME: &'static str = "Blinky";
     const COLOR: Color = Color::RED;
     const SCATTER: GridLocation = GridLocation {

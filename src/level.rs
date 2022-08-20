@@ -1,9 +1,9 @@
-use crate::food::{Eater, Food};
-use crate::ghost::{Blinky, Clyde, Ghost, GhostBundle, Inky, Pinky, ScatterTarget};
+use crate::food::{Eater, Energizer, Food};
+use crate::ghost::{Blinky, Clyde, GhostBundle, Inky, Personality, Pinky, ScatterTarget};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
 use crate::movement::{moving_left, Collides, MovementBundle, NextDir, StartLocation};
-use crate::player::{Deadly, Player, PlayerDied};
+use crate::player::{Player, PlayerDied};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
 use bevy::utils::HashSet;
@@ -198,10 +198,10 @@ fn spawn_level_entities(bldr: &mut ChildBuilder, layout: &Layout, level_assets: 
 
             match layout.get(&loc) {
                 Some(Tile::Dot) => {
-                    spawn_food(bldr, loc, "Dot", 0, level_assets, 10);
+                    spawn_food(bldr, loc, "Dot", 0, level_assets, 10, ());
                 }
                 Some(Tile::Energizer) => {
-                    spawn_food(bldr, loc, "Energizer", 1, level_assets, 50);
+                    spawn_food(bldr, loc, "Energizer", 1, level_assets, 50, (Energizer,));
                 }
                 Some(Tile::PacMan) => spawn_pac_man(bldr, loc, level_assets),
                 Some(Tile::Blinky) => spawn_ghost::<Blinky>(bldr, loc, &level_assets.blinky),
@@ -250,7 +250,8 @@ fn spawn_food(
     sprite_index: usize,
     level_assets: &LevelAssets,
     points: u32,
-) -> Entity {
+    bundle: impl Bundle,
+) {
     commands
         .spawn_bundle(GridEntity {
             name: Name::new(name),
@@ -262,17 +263,17 @@ fn spawn_food(
             ..default()
         })
         .insert(Food { points })
-        .id()
+        .insert_bundle(bundle);
 }
 
-fn spawn_ghost<G: Ghost>(
+fn spawn_ghost<P: Personality>(
     commands: &mut ChildBuilder,
     location: GridLocation,
     atlas: &Handle<TextureAtlas>,
 ) {
     commands
         .spawn_bundle(GridEntity {
-            name: Name::new(G::NAME),
+            name: Name::new(P::NAME),
             texture_atlas: atlas.clone(),
             grid: GRID,
             location,
@@ -284,9 +285,8 @@ fn spawn_ghost<G: Ghost>(
         })
         .insert_bundle(moving_left(location))
         .insert_bundle(GhostBundle {
-            scatter_target: ScatterTarget(G::SCATTER),
+            scatter_target: ScatterTarget(P::SCATTER),
+            personality: P::default(),
             ..default()
-        })
-        .insert_bundle((Deadly, NextDir::default()))
-        .insert(G::default());
+        });
 }

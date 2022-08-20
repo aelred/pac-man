@@ -6,6 +6,7 @@ mod pinky;
 use std::time::Duration;
 
 use bevy::prelude::*;
+use rand::seq::SliceRandom;
 
 use crate::{
     grid::{GridLocation, MoveOnGrid},
@@ -27,6 +28,7 @@ impl Plugin for GhostPlugin {
             .add_system(choose_next_dir.after(SetDir).before(MoveOnGrid))
             .add_system(tick_mode)
             .add_system(scatter)
+            .add_system(frightened)
             .add_system(blinky::chase)
             .add_system(pinky::chase)
             .add_system(inky::chase)
@@ -35,8 +37,11 @@ impl Plugin for GhostPlugin {
 }
 
 #[derive(Bundle, Default)]
-pub struct GhostBundle {
+pub struct GhostBundle<P: Personality> {
     pub scatter_target: ScatterTarget,
+    pub ghost: Ghost,
+    pub personality: P,
+    pub next_dir: NextDir,
     pub _target: Target,
 }
 
@@ -51,16 +56,20 @@ const MODE_TABLE: [(Mode, f32); 8] = [
     (Mode::Chase, f32::INFINITY),
 ];
 
-pub trait Ghost: Component + Default {
+pub trait Personality: Component + Default {
     const NAME: &'static str;
     const COLOR: Color;
     const SCATTER: GridLocation;
 }
 
+#[derive(Component, Default)]
+pub struct Ghost;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Mode {
     Scatter,
     Chase,
+    Frightened,
 }
 
 impl Default for Mode {
@@ -88,6 +97,8 @@ pub struct Target(pub GridLocation);
 
 #[derive(Component, Default, Deref, DerefMut)]
 pub struct ScatterTarget(pub GridLocation);
+
+const DIRECTIONS: [Dir; 4] = [Dir::Up, Dir::Left, Dir::Down, Dir::Right];
 
 fn tick_mode(time: Res<Time>, mut mode_timer: ResMut<ModeTimer>, mut mode: ResMut<Mode>) {
     mode_timer.timer.tick(time.delta());
@@ -121,14 +132,52 @@ fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target)>) {
     }
 }
 
+fn frightened(
+    mode: Res<Mode>,
+    layout: Res<Layout>,
+    mut query: Query<
+        (&Dir, &mut NextDir, &GridLocation, &Collides),
+        (With<Ghost>, Changed<GridLocation>),
+    >,
+) {
+    if *mode != Mode::Frightened {
+        return;
+    }
+
+    for (dir, mut next_dir, loc, collides) in &mut query {
+        let next_loc = loc.shift(*dir);
+
+        if collides.at(&layout, &next_loc) {
+            continue;
+        }
+
+        let random_dir = *DIRECTIONS.choose(&mut rand::thread_rng()).unwrap();
+
+        for candidate_dir in std::iter::once(random_dir).chain(DIRECTIONS) {
+            let candidate_loc = next_loc.shift(candidate_dir);
+            let collision = collides.at(&layout, &candidate_loc);
+
+            if !collision && candidate_loc != *loc {
+                **next_dir = Some(candidate_dir);
+                break;
+            }
+        }
+    }
+}
+
 // Ghosts decide on their next direction one grid location BEFORE
 fn choose_next_dir(
+    mode: Res<Mode>,
     layout: Res<Layout>,
     mut query: Query<
         (&Dir, &mut NextDir, &GridLocation, &Target, &Collides),
         Changed<GridLocation>,
     >,
 ) {
+    if *mode == Mode::Frightened {
+        return;
+    }
+
     for (dir, mut next_dir, loc, target, collides) in &mut query {
         let next_loc = loc.shift(*dir);
 
@@ -138,8 +187,8 @@ fn choose_next_dir(
 
         let mut distance_to_target = f32::MAX;
 
-        for candidate_dir in &[Dir::Up, Dir::Left, Dir::Down, Dir::Right] {
-            let candidate_loc = next_loc.shift(*candidate_dir);
+        for candidate_dir in DIRECTIONS {
+            let candidate_loc = next_loc.shift(candidate_dir);
             let collision = collides.at(&layout, &candidate_loc);
 
             let distance = candidate_loc
@@ -147,7 +196,7 @@ fn choose_next_dir(
                 .distance_squared(target.to_unscaled_vec2());
 
             if !collision && candidate_loc != *loc && distance < distance_to_target {
-                **next_dir = Some(*candidate_dir);
+                **next_dir = Some(candidate_dir);
                 distance_to_target = distance;
             }
         }
