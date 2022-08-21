@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{grid::GridLocation, level::WIDTH_TILES, movement::Dir, player::Player};
 
-use super::{blinky::Blinky, GhostSpawner, Mode, Personality, Target};
+use super::{blinky::Blinky, Ghost, Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Inky;
@@ -14,10 +14,7 @@ impl Personality for Inky {
         x: WIDTH_TILES as isize - 1,
         y: 0,
     };
-
-    fn get_atlas(assets: &GhostSpawner) -> &Handle<TextureAtlas> {
-        &assets.inky
-    }
+    const GHOST: Ghost = Ghost::Inky;
 }
 
 pub fn chase(

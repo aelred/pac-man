@@ -46,15 +46,7 @@ impl Plugin for GhostPlugin {
                     .with_system(clyde::chase)
                     .with_system(scatter.after(SetMode)),
             )
-            .add_system_set(
-                SystemSet::new()
-                    .in_ambiguity_set("frightened_sprites")
-                    .after(SetMode)
-                    .with_system(frightened_sprites::<Blinky>)
-                    .with_system(frightened_sprites::<Pinky>)
-                    .with_system(frightened_sprites::<Inky>)
-                    .with_system(frightened_sprites::<Clyde>),
-            );
+            .add_system(frightened_sprites.after(SetMode));
     }
 }
 
@@ -72,16 +64,44 @@ pub struct GhostSpawner {
     frightened: Handle<TextureAtlas>,
 }
 
+impl GhostSpawner {
+    fn get_atlas(&self, ghost: &Ghost) -> Handle<TextureAtlas> {
+        match ghost {
+            Ghost::Blinky => &self.blinky,
+            Ghost::Pinky => &self.pinky,
+            Ghost::Inky => &self.inky,
+            Ghost::Clyde => &self.clyde,
+        }
+        .clone()
+    }
+}
+
 pub trait Personality: Component + Default {
     const NAME: &'static str;
     const COLOR: Color;
     const SCATTER: GridLocation;
-
-    fn get_atlas(assets: &GhostSpawner) -> &Handle<TextureAtlas>;
+    const GHOST: Ghost;
 }
 
 #[derive(Component, Default)]
-pub struct Ghost;
+pub enum Ghost {
+    #[default]
+    Blinky,
+    Pinky,
+    Inky,
+    Clyde,
+}
+
+impl Ghost {
+    pub fn color(&self) -> Color {
+        match self {
+            Ghost::Blinky => Blinky::COLOR,
+            Ghost::Pinky => Pinky::COLOR,
+            Ghost::Inky => Inky::COLOR,
+            Ghost::Clyde => Clyde::COLOR,
+        }
+    }
+}
 
 #[derive(Component, Default, Deref, DerefMut)]
 pub struct Target(pub GridLocation);
@@ -138,20 +158,20 @@ fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target)>) {
     }
 }
 
-fn frightened_sprites<P: Personality>(
+fn frightened_sprites(
     mode: Res<Mode>,
     assets: Res<GhostSpawner>,
-    mut query: Query<&mut Handle<TextureAtlas>, With<P>>,
+    mut query: Query<(&Ghost, &mut Handle<TextureAtlas>)>,
 ) {
     if !mode.is_changed() {
         return;
     }
 
-    for mut ghost_atlas in &mut query {
+    for (ghost, mut ghost_atlas) in &mut query {
         *ghost_atlas = if *mode == Mode::Frightened {
             assets.frightened.clone()
         } else {
-            P::get_atlas(&assets).clone()
+            assets.get_atlas(ghost)
         };
     }
 }

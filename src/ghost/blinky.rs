@@ -6,7 +6,7 @@ use crate::{
     player::Player,
 };
 
-use super::{GhostSpawner, Mode, Personality, Target};
+use super::{Ghost, Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Blinky;
@@ -18,10 +18,7 @@ impl Personality for Blinky {
         x: WIDTH_TILES as isize - 3,
         y: HEIGHT_TILES as isize - 1,
     };
-
-    fn get_atlas(assets: &GhostSpawner) -> &Handle<TextureAtlas> {
-        &assets.blinky
-    }
+    const GHOST: Ghost = Ghost::Blinky;
 }
 
 pub fn chase(

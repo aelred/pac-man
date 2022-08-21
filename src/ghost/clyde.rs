@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{grid::GridLocation, player::Player};
 
-use super::{GhostSpawner, Mode, Personality, Target};
+use super::{Ghost, Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Clyde;
@@ -11,10 +11,7 @@ impl Personality for Clyde {
     const NAME: &'static str = "Clyde";
     const COLOR: Color = Color::rgb(1.0, 0.72, 0.32);
     const SCATTER: GridLocation = GridLocation { x: 0, y: 0 };
-
-    fn get_atlas(assets: &GhostSpawner) -> &Handle<TextureAtlas> {
-        &assets.clyde
-    }
+    const GHOST: Ghost = Ghost::Clyde;
 }
 
 pub fn chase(

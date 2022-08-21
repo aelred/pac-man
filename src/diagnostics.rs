@@ -4,7 +4,7 @@ use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspec
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
 use crate::from_env::ExecutionOrderAmbiguitiesPlugin;
-use crate::ghost::{Blinky, Clyde, Inky, Personality, Pinky, SetTarget, Target};
+use crate::ghost::{Ghost, SetTarget, Target};
 use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
 use crate::movement::{Dir, NextDir};
@@ -31,29 +31,12 @@ impl Plugin for InspectorPlugin {
                     .label(PlayerDeath)
                     .in_ambiguity_set(PlayerDeath),
             )
-            .add_system(
-                draw_grid
-                    .after(toggle_debug_mode)
-                    .in_ambiguity_set(DrawLines),
-            )
-            .add_system_set(
-                SystemSet::new()
-                    .after(toggle_debug_mode)
-                    .after(SetTarget)
-                    .in_ambiguity_set("draw_target")
-                    .in_ambiguity_set(DrawLines)
-                    .with_system(draw_target::<Blinky>)
-                    .with_system(draw_target::<Pinky>)
-                    .with_system(draw_target::<Inky>)
-                    .with_system(draw_target::<Clyde>),
-            )
+            .add_system(draw_grid.after(toggle_debug_mode))
+            .add_system(draw_target.after(SetTarget).after(draw_grid))
             .register_inspectable::<NextDir>()
             .register_inspectable::<Dir>();
     }
 }
-
-#[derive(AmbiguitySetLabel)]
-struct DrawLines;
 
 #[derive(Default)]
 struct DebugMode(bool);
@@ -98,20 +81,20 @@ fn draw_grid(debug_mode: Res<DebugMode>, mut lines: ResMut<DebugLines>) {
     }
 }
 
-fn draw_target<G: Personality>(
+fn draw_target(
     debug_mode: Res<DebugMode>,
     mut lines: ResMut<DebugLines>,
-    query: Query<(&Grid, &Target), With<G>>,
+    query: Query<(&Ghost, &Grid, &Target)>,
 ) {
     if !debug_mode.0 {
         return;
     }
 
-    for (grid, target) in &query {
+    for (ghost, grid, target) in &query {
         let target = grid.to_vec2(**target).extend(0.0);
         let x = (Vec2::X * grid.size / 4.0).extend(0.0);
         let y = (Vec2::Y * grid.size / 4.0).extend(0.0);
-        lines.line_colored(target - x - y, target + x + y, 0.0, G::COLOR);
-        lines.line_colored(target - x + y, target + x - y, 0.0, G::COLOR);
+        lines.line_colored(target - x - y, target + x + y, 0.0, ghost.color());
+        lines.line_colored(target - x + y, target + x - y, 0.0, ghost.color());
     }
 }

@@ -15,9 +15,10 @@ impl GhostSpawner {
         personality: P,
         location: GridLocation,
     ) {
+        let ghost = P::GHOST;
         bldr.spawn_bundle(GridEntity {
             name: Name::new(P::NAME),
-            texture_atlas: P::get_atlas(self).clone(),
+            texture_atlas: self.get_atlas(&ghost),
             grid: GRID,
             location,
             ..default()
@@ -25,6 +26,7 @@ impl GhostSpawner {
         .insert_bundle(moving_left(location))
         .insert_bundle(GhostBundle {
             scatter_target: ScatterTarget(P::SCATTER),
+            ghost,
             personality,
             ..default()
         });
