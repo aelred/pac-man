@@ -1,5 +1,5 @@
 use crate::food::{Eater, Energizer, Food};
-use crate::ghost::{Blinky, Clyde, GhostBundle, Inky, Personality, Pinky, ScatterTarget};
+use crate::ghost::{Blinky, Clyde, GhostSpawner, Inky, Pinky};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
 use crate::movement::{moving_left, MovementBundle, NextDir, StartLocation};
@@ -37,10 +37,6 @@ struct Level;
 
 struct LevelAssets {
     pac_man: Handle<TextureAtlas>,
-    blinky: Handle<TextureAtlas>,
-    pinky: Handle<TextureAtlas>,
-    inky: Handle<TextureAtlas>,
-    clyde: Handle<TextureAtlas>,
     objects: Handle<TextureAtlas>,
 }
 
@@ -60,42 +56,6 @@ impl FromWorld for LevelAssets {
             Vec2::new(456.0, 0.0),
         );
 
-        let blinky_atlas = TextureAtlas::from_grid_with_padding(
-            sheet.clone(),
-            Vec2::splat(16.0),
-            8,
-            1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 64.0),
-        );
-
-        let pinky_atlas = TextureAtlas::from_grid_with_padding(
-            sheet.clone(),
-            Vec2::splat(16.0),
-            8,
-            1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 80.0),
-        );
-
-        let inky_atlas = TextureAtlas::from_grid_with_padding(
-            sheet.clone(),
-            Vec2::splat(16.0),
-            8,
-            1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 96.0),
-        );
-
-        let clyde_atlas = TextureAtlas::from_grid_with_padding(
-            sheet.clone(),
-            Vec2::splat(16.0),
-            8,
-            1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 112.0),
-        );
-
         let mut object_atlas = TextureAtlas::new_empty(sheet, Vec2::new(680.0, 248.0));
 
         object_atlas.add_texture(Rect {
@@ -107,12 +67,8 @@ impl FromWorld for LevelAssets {
             max: Vec2::new(16.0, 32.0),
         });
 
-        LevelAssets {
+        Self {
             pac_man: texture_atlases.add(pac_man_atlas),
-            blinky: texture_atlases.add(blinky_atlas),
-            pinky: texture_atlases.add(pinky_atlas),
-            inky: texture_atlases.add(inky_atlas),
-            clyde: texture_atlases.add(clyde_atlas),
             objects: texture_atlases.add(object_atlas),
         }
     }
@@ -161,11 +117,16 @@ fn setup_background(
         .insert(Name::new("Background"));
 }
 
-fn create_level(mut commands: Commands, layout: Res<Layout>, level_assets: Res<LevelAssets>) {
+fn create_level(
+    mut commands: Commands,
+    layout: Res<Layout>,
+    level_assets: Res<LevelAssets>,
+    ghosts: Res<GhostSpawner>,
+) {
     commands
         .spawn_bundle(SpatialBundle::default())
         .insert_bundle((Name::new("Level"), Level))
-        .with_children(|bldr| spawn_level_entities(bldr, &layout, &level_assets));
+        .with_children(|bldr| spawn_level_entities(bldr, &layout, &level_assets, &ghosts));
 }
 
 fn reset_level_when_player_dies(
@@ -187,7 +148,12 @@ fn reset_level_when_player_dies(
     }
 }
 
-fn spawn_level_entities(bldr: &mut ChildBuilder, layout: &Layout, level_assets: &LevelAssets) {
+fn spawn_level_entities(
+    bldr: &mut ChildBuilder,
+    layout: &Layout,
+    level_assets: &LevelAssets,
+    ghosts: &GhostSpawner,
+) {
     for x in 0..WIDTH_TILES {
         for y in 0..HEIGHT_TILES {
             let loc = GridLocation {
@@ -203,10 +169,10 @@ fn spawn_level_entities(bldr: &mut ChildBuilder, layout: &Layout, level_assets: 
                     spawn_food(bldr, loc, "Energizer", 1, level_assets, 50, (Energizer,));
                 }
                 Some(Tile::PacMan) => spawn_pac_man(bldr, loc, level_assets),
-                Some(Tile::Blinky) => spawn_ghost::<Blinky>(bldr, loc, &level_assets.blinky),
-                Some(Tile::Pinky) => spawn_ghost::<Pinky>(bldr, loc, &level_assets.pinky),
-                Some(Tile::Inky) => spawn_ghost::<Inky>(bldr, loc, &level_assets.inky),
-                Some(Tile::Clyde) => spawn_ghost::<Clyde>(bldr, loc, &level_assets.clyde),
+                Some(Tile::Blinky) => ghosts.spawn(bldr, Blinky, loc),
+                Some(Tile::Pinky) => ghosts.spawn(bldr, Pinky, loc),
+                Some(Tile::Inky) => ghosts.spawn(bldr, Inky, loc),
+                Some(Tile::Clyde) => ghosts.spawn(bldr, Clyde, loc),
                 _ => {}
             }
         }
@@ -214,15 +180,15 @@ fn spawn_level_entities(bldr: &mut ChildBuilder, layout: &Layout, level_assets: 
 }
 
 #[derive(Bundle, Default)]
-struct GridEntity {
-    name: Name,
-    sprite: TextureAtlasSprite,
-    texture_atlas: Handle<TextureAtlas>,
-    grid: Grid,
-    location: GridLocation,
-    layer: Layer,
+pub struct GridEntity {
+    pub name: Name,
+    pub sprite: TextureAtlasSprite,
+    pub texture_atlas: Handle<TextureAtlas>,
+    pub grid: Grid,
+    pub location: GridLocation,
+    pub layer: Layer,
     #[bundle]
-    _spatial: SpatialBundle,
+    pub _spatial: SpatialBundle,
 }
 
 fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_assets: &LevelAssets) {
@@ -260,26 +226,4 @@ fn spawn_food(
         })
         .insert(Food { points })
         .insert_bundle(bundle);
-}
-
-fn spawn_ghost<P: Personality>(
-    commands: &mut ChildBuilder,
-    location: GridLocation,
-    atlas: &Handle<TextureAtlas>,
-) {
-    commands
-        .spawn_bundle(GridEntity {
-            name: Name::new(P::NAME),
-            texture_atlas: atlas.clone(),
-            grid: GRID,
-            location,
-            ..default()
-        })
-        .insert_bundle(MovementBundle::default())
-        .insert_bundle(moving_left(location))
-        .insert_bundle(GhostBundle {
-            scatter_target: ScatterTarget(P::SCATTER),
-            personality: P::default(),
-            ..default()
-        });
 }

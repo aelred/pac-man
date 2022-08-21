@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{grid::GridLocation, level::HEIGHT_TILES, movement::Dir, player::Player};
 
-use super::{Mode, Personality, Target};
+use super::{GhostSpawner, Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Pinky;
@@ -14,6 +14,10 @@ impl Personality for Pinky {
         x: 2,
         y: HEIGHT_TILES as isize - 1,
     };
+
+    fn get_atlas(assets: &GhostSpawner) -> &Handle<TextureAtlas> {
+        &assets.pinky
+    }
 }
 
 pub fn chase(
