@@ -1,8 +1,8 @@
+mod assets;
 mod blinky;
 mod clyde;
 mod inky;
 mod pinky;
-mod spawner;
 
 use bevy::prelude::*;
 use rand::seq::SliceRandom;

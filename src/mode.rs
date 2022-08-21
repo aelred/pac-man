@@ -8,7 +8,10 @@ impl Plugin for ModePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Mode>()
             .init_resource::<ModeTimer>()
-            .add_system(tick_mode);
+            .init_resource::<FrightenedTimer>()
+            .add_system(tick_mode)
+            .add_system(tick_frightened)
+            .add_system(start_frightened_timer);
     }
 }
 
@@ -39,10 +42,19 @@ impl Default for ModeTimer {
     }
 }
 
-fn tick_mode(time: Res<Time>, mut mode_timer: ResMut<ModeTimer>, mut mode: ResMut<Mode>) {
-    mode_timer.timer.tick(time.delta());
+#[derive(Deref, DerefMut)]
+struct FrightenedTimer(Timer);
 
-    if !mode_timer.timer.finished() {
+impl Default for FrightenedTimer {
+    fn default() -> Self {
+        let mut timer = Timer::new(Duration::from_secs_f32(6.0), false);
+        timer.pause();
+        FrightenedTimer(timer)
+    }
+}
+
+fn tick_mode(time: Res<Time>, mut mode_timer: ResMut<ModeTimer>, mut mode: ResMut<Mode>) {
+    if !mode_timer.timer.tick(time.delta()).finished() {
         return;
     }
 
@@ -56,6 +68,31 @@ fn tick_mode(time: Res<Time>, mut mode_timer: ResMut<ModeTimer>, mut mode: ResMu
         mode_timer.timer.set_duration(new_duration);
     } else {
         mode_timer.timer.pause();
+    }
+}
+
+fn start_frightened_timer(
+    mut mode_timer: ResMut<ModeTimer>,
+    mut frightened_timer: ResMut<FrightenedTimer>,
+    mode: Res<Mode>,
+) {
+    if mode.is_changed() && *mode == Mode::Frightened {
+        mode_timer.timer.pause();
+        frightened_timer.reset();
+        frightened_timer.unpause();
+    }
+}
+
+fn tick_frightened(
+    time: Res<Time>,
+    mut mode_timer: ResMut<ModeTimer>,
+    mut frightened_timer: ResMut<FrightenedTimer>,
+    mut mode: ResMut<Mode>,
+) {
+    if frightened_timer.tick(time.delta()).finished() {
+        mode_timer.timer.unpause();
+        frightened_timer.pause();
+        *mode = MODE_TABLE[mode_timer.index].0;
     }
 }
 
