@@ -1,8 +1,10 @@
-export WINDOW_X=-2560
-export WINDOW_Y=0
-export WINDOW_WIDTH=1280
-export WINDOW_HEIGHT=1440
-export WINDOW_DECORATIONS=false
+run:
+	cargo run
+
+serve:
+	cargo run --target wasm32-unknown-unknown
 
 watch:
 	cargo watch -x run
+
+.PHONY: run serve watch
