@@ -5,6 +5,7 @@ mod ghost;
 mod grid;
 mod layout;
 mod level;
+mod mode;
 mod movement;
 mod player;
 mod score;
@@ -27,6 +28,7 @@ use from_env::FromEnv;
 use ghost::GhostPlugin;
 use layout::LayoutPlugin;
 use level::GRID_SIZE;
+use mode::ModePlugin;
 
 fn main() {
     App::new()
@@ -53,6 +55,7 @@ fn main() {
         .add_plugin(LevelPlugin)
         .add_plugin(LayoutPlugin)
         .add_plugin(GhostPlugin)
+        .add_plugin(ModePlugin)
         .run();
 }
 

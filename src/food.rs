@@ -1,5 +1,5 @@
-use crate::ghost::Mode;
 use crate::grid::GridLocation;
+use crate::mode::Mode;
 use crate::movement::SetDir;
 use crate::score::{Score, UpdateScore};
 use bevy::prelude::*;
