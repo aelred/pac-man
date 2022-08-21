@@ -4,7 +4,7 @@ use crate::grid::{GridBundle, GridLocation, Layer};
 use crate::level::GRID;
 use crate::player::{Lives, UpdateLives};
 use crate::score::{HighScore, Score, UpdateHighScore, UpdateScore};
-use crate::text::{Align, SetTextSprites, Text, TextBundle, TextPlugin};
+use crate::text::{Align, SetTextSprites, TextBundle, TextPlugin, TextSprites};
 use crate::HEIGHT_TILES;
 use bevy::prelude::*;
 use bevy::sprite::{Anchor, Rect};
@@ -67,7 +67,7 @@ fn setup_ui(mut commands: Commands) {
         .with_children(|builder| {
             builder
                 .spawn_bundle(TextBundle {
-                    text: Text {
+                    text: TextSprites {
                         string: "1UP   HIGH SCORE".to_string(),
                         ..default()
                     },
@@ -86,7 +86,7 @@ fn setup_ui(mut commands: Commands) {
 
             builder
                 .spawn_bundle(TextBundle {
-                    text: Text {
+                    text: TextSprites {
                         align: Align::Right,
                         ..default()
                     },
@@ -105,7 +105,7 @@ fn setup_ui(mut commands: Commands) {
 
             builder
                 .spawn_bundle(TextBundle {
-                    text: Text {
+                    text: TextSprites {
                         align: Align::Right,
                         ..default()
                     },
@@ -134,7 +134,7 @@ fn setup_ui(mut commands: Commands) {
         });
 }
 
-fn update_score_display(score: Res<Score>, mut query: Query<&mut Text, With<ScoreDisplay>>) {
+fn update_score_display(score: Res<Score>, mut query: Query<&mut TextSprites, With<ScoreDisplay>>) {
     if !score.is_changed() {
         return;
     }
@@ -146,7 +146,7 @@ fn update_score_display(score: Res<Score>, mut query: Query<&mut Text, With<Scor
 
 fn update_high_score_display(
     high_score: Res<HighScore>,
-    mut query: Query<&mut Text, With<HighScoreDisplay>>,
+    mut query: Query<&mut TextSprites, With<HighScoreDisplay>>,
 ) {
     if !high_score.is_changed() {
         return;

@@ -20,7 +20,7 @@ pub struct SetTextSprites;
 
 #[derive(Bundle, Default)]
 pub struct TextBundle {
-    pub text: Text,
+    pub text: TextSprites,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
@@ -28,7 +28,7 @@ pub struct TextBundle {
 }
 
 #[derive(Component, Inspectable, Default)]
-pub struct Text {
+pub struct TextSprites {
     pub string: String,
     pub align: Align,
 }
@@ -57,7 +57,7 @@ impl FromWorld for FontHandle {
 fn set_sprites(
     mut commands: Commands,
     font: Res<FontHandle>,
-    query: Query<(Entity, &Text), Changed<Text>>,
+    query: Query<(Entity, &TextSprites), Changed<TextSprites>>,
 ) {
     for (entity, text) in &query {
         commands.entity(entity).despawn_descendants();
