@@ -30,7 +30,11 @@ impl Plugin for GhostPlugin {
             .add_system(inky::chase)
             .add_system(clyde::chase)
             .add_system(scatter)
-            .add_system(frightened);
+            .add_system(frightened)
+            .add_system(frightened_sprites::<Blinky>)
+            .add_system(frightened_sprites::<Pinky>)
+            .add_system(frightened_sprites::<Inky>)
+            .add_system(frightened_sprites::<Clyde>);
     }
 }
 
@@ -39,6 +43,7 @@ pub struct GhostSpawner {
     pinky: Handle<TextureAtlas>,
     inky: Handle<TextureAtlas>,
     clyde: Handle<TextureAtlas>,
+    frightened: Handle<TextureAtlas>,
 }
 
 pub trait Personality: Component + Default {
@@ -104,6 +109,24 @@ fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target)>) {
         if **target != **scatter_target {
             **target = **scatter_target;
         }
+    }
+}
+
+fn frightened_sprites<P: Personality>(
+    mode: Res<Mode>,
+    assets: Res<GhostSpawner>,
+    mut query: Query<&mut Handle<TextureAtlas>, With<P>>,
+) {
+    if !mode.is_changed() {
+        return;
+    }
+
+    for mut ghost_atlas in &mut query {
+        *ghost_atlas = if *mode == Mode::Frightened {
+            assets.frightened.clone()
+        } else {
+            P::get_atlas(&assets).clone()
+        };
     }
 }
 

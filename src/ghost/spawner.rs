@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Rect};
 
 use crate::{
     grid::GridLocation,
@@ -38,9 +38,11 @@ impl FromWorld for GhostSpawner {
 
         let mut texture_atlases: Mut<Assets<TextureAtlas>> = world.resource_mut();
 
+        let tile_size = Vec2::splat(16.0);
+
         let blinky_atlas = TextureAtlas::from_grid_with_padding(
             sheet.clone(),
-            Vec2::splat(16.0),
+            tile_size,
             8,
             1,
             Vec2::ZERO,
@@ -66,7 +68,7 @@ impl FromWorld for GhostSpawner {
         );
 
         let clyde_atlas = TextureAtlas::from_grid_with_padding(
-            sheet,
+            sheet.clone(),
             Vec2::splat(16.0),
             8,
             1,
@@ -74,11 +76,24 @@ impl FromWorld for GhostSpawner {
             Vec2::new(456.0, 112.0),
         );
 
+        let mut frightened_atlas = TextureAtlas::new_empty(sheet, Vec2::new(680.0, 248.0));
+        // Add same two sprites four times (the sprites are the same for each direction
+        for _ in 0..4 {
+            for ix in 0..2 {
+                let min = Vec2::new(584.0 + ix as f32 * 16.0, 64.0);
+                frightened_atlas.add_texture(Rect {
+                    min,
+                    max: min + tile_size,
+                });
+            }
+        }
+
         Self {
             blinky: texture_atlases.add(blinky_atlas),
             pinky: texture_atlases.add(pinky_atlas),
             inky: texture_atlases.add(inky_atlas),
             clyde: texture_atlases.add(clyde_atlas),
+            frightened: texture_atlases.add(frightened_atlas),
         }
     }
 }
