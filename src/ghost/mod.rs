@@ -8,10 +8,11 @@ use bevy::prelude::*;
 use rand::seq::SliceRandom;
 
 use crate::{
-    grid::{GridLocation, MoveOnGrid},
+    grid::{GridLocation, SetGridLocation},
     layout::Layout,
-    mode::Mode,
-    movement::{Dir, NextDir, SetDir},
+    mode::{Mode, SetMode, TickMode},
+    movement::{Dir, NextDir, SetDir, SetNextDir},
+    player::Player,
 };
 
 pub use blinky::Blinky;
@@ -24,19 +25,48 @@ pub struct GhostPlugin;
 impl Plugin for GhostPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GhostSpawner>()
-            .add_system(choose_next_dir.after(SetDir).before(MoveOnGrid))
-            .add_system(blinky::chase)
-            .add_system(pinky::chase)
-            .add_system(inky::chase)
-            .add_system(clyde::chase)
-            .add_system(scatter)
-            .add_system(frightened)
-            .add_system(frightened_sprites::<Blinky>)
-            .add_system(frightened_sprites::<Pinky>)
-            .add_system(frightened_sprites::<Inky>)
-            .add_system(frightened_sprites::<Clyde>);
+            .add_system(
+                // Don't label this SetNextDir, because it never takes effect this frame
+                choose_next_dir
+                    .after(TickMode)
+                    .after(SetDir)
+                    .before(SetGridLocation),
+            )
+            .add_system_set(
+                // These systems are actually mutually exclusive - they operate on diff ghosts, or in diff modes
+                SystemSet::new()
+                    .label(SetTarget)
+                    .in_ambiguity_set(GhostModes)
+                    .after(SetMode)
+                    .with_system(blinky::chase)
+                    .with_system(pinky::chase)
+                    .with_system(inky::chase)
+                    .with_system(clyde::chase)
+                    .with_system(scatter.after(SetMode)),
+            )
+            .add_system(
+                frightened
+                    .label(SetNextDir)
+                    .in_ambiguity_set(GhostModes)
+                    .after(TickMode),
+            )
+            .add_system_set(
+                SystemSet::new()
+                    .in_ambiguity_set("frightened_sprites")
+                    .after(SetMode)
+                    .with_system(frightened_sprites::<Blinky>)
+                    .with_system(frightened_sprites::<Pinky>)
+                    .with_system(frightened_sprites::<Inky>)
+                    .with_system(frightened_sprites::<Clyde>),
+            );
     }
 }
+
+#[derive(SystemLabel)]
+pub struct SetTarget;
+
+#[derive(AmbiguitySetLabel)]
+struct GhostModes;
 
 pub struct GhostSpawner {
     blinky: Handle<TextureAtlas>,
@@ -133,7 +163,10 @@ fn frightened_sprites<P: Personality>(
 fn frightened(
     mode: Res<Mode>,
     layout: Res<Layout>,
-    mut query: Query<(&Dir, &mut NextDir, &GridLocation), (With<Ghost>, Changed<GridLocation>)>,
+    mut query: Query<
+        (&Dir, &mut NextDir, &GridLocation),
+        (With<Ghost>, Changed<GridLocation>, Without<Player>),
+    >,
 ) {
     if *mode != Mode::Frightened {
         return;

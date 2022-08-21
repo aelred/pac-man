@@ -9,11 +9,22 @@ impl Plugin for ModePlugin {
         app.init_resource::<Mode>()
             .init_resource::<ModeTimer>()
             .init_resource::<FrightenedTimer>()
-            .add_system(tick_mode)
-            .add_system(tick_frightened)
-            .add_system(start_frightened_timer);
+            .add_system(tick_mode.label(TickMode).label(SetMode))
+            .add_system(
+                tick_frightened
+                    .label(TickMode)
+                    .label(SetMode)
+                    .after(tick_mode),
+            )
+            .add_system(start_frightened_timer.after(SetMode));
     }
 }
+
+#[derive(SystemLabel)]
+pub struct TickMode;
+
+#[derive(SystemLabel)]
+pub struct SetMode;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Mode {

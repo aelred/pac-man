@@ -1,4 +1,4 @@
-use crate::grid::{GridLocation, GridMoving};
+use crate::grid::{GridLocation, GridMoving, SetGridLocation, SetGridMoving};
 use crate::layout::Layout;
 use crate::WIDTH_TILES;
 use bevy::prelude::*;
@@ -11,16 +11,27 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(animate)
-            .add_system(set_sprite_direction)
-            .add_system(change_to_next_dir.label(SetDir))
-            .add_system(move_dir.after(SetDir))
-            .add_system(wrap_left_right);
+        app.add_system(animate.in_ambiguity_set(Animate))
+            .add_system(set_sprite_direction.in_ambiguity_set(Animate).after(SetDir))
+            .add_system(change_to_next_dir.label(SetDir).after(SetNextDir))
+            .add_system(
+                move_dir
+                    .label(SetGridMoving)
+                    .after(SetDir)
+                    .after(SetGridLocation),
+            )
+            .add_system(wrap_left_right.label(SetGridLocation).before(SetGridMoving));
     }
 }
 
+#[derive(AmbiguitySetLabel)]
+struct Animate;
+
 #[derive(SystemLabel)]
 pub struct SetDir;
+
+#[derive(SystemLabel)]
+pub struct SetNextDir;
 
 #[derive(Bundle, Default)]
 pub struct MovementBundle {
@@ -66,9 +77,9 @@ pub fn moving_left(location: GridLocation) -> impl Bundle {
 fn move_dir(
     mut commands: Commands,
     layout: Res<Layout>,
-    mut query: Query<(Entity, &GridLocation, &Dir), Without<GridMoving>>,
+    query: Query<(Entity, &GridLocation, &Dir), Without<GridMoving>>,
 ) {
-    for (entity, location, dir) in &mut query {
+    for (entity, location, dir) in &query {
         let new_loc = location.shift(*dir);
         if !layout.collides(&new_loc) {
             commands.entity(entity).insert(GridMoving {

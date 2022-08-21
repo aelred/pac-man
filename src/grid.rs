@@ -6,14 +6,28 @@ pub struct GridPlugin;
 
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(update_transform_from_grid_location)
-            .add_system(update_transform_from_grid_moving)
-            .add_system(move_on_grid.label(MoveOnGrid));
+        app.add_system(
+            update_transform_from_grid_location
+                .in_ambiguity_set(UpdateTransform)
+                .after(SetGridLocation),
+        )
+        .add_system(
+            update_transform_from_grid_moving
+                .in_ambiguity_set(UpdateTransform)
+                .after(SetGridMoving),
+        )
+        .add_system(move_on_grid.label(SetGridLocation).label(SetGridMoving));
     }
 }
 
+#[derive(AmbiguitySetLabel)]
+struct UpdateTransform;
+
 #[derive(SystemLabel)]
-pub struct MoveOnGrid;
+pub struct SetGridLocation;
+
+#[derive(SystemLabel)]
+pub struct SetGridMoving;
 
 #[derive(Component)]
 pub struct Layer(pub f32);

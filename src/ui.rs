@@ -2,9 +2,9 @@ use std::cmp::Ordering;
 
 use crate::grid::{GridBundle, GridLocation, Layer};
 use crate::level::GRID;
-use crate::player::Lives;
+use crate::player::{Lives, UpdateLives};
 use crate::score::{HighScore, Score, UpdateHighScore, UpdateScore};
-use crate::text::{Align, Text, TextBundle, TextPlugin};
+use crate::text::{Align, SetTextSprites, Text, TextBundle, TextPlugin};
 use crate::HEIGHT_TILES;
 use bevy::prelude::*;
 use bevy::sprite::{Anchor, Rect};
@@ -15,12 +15,20 @@ impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TextPlugin)
             .add_startup_system(setup_ui)
-            .add_system(update_score_display.after(UpdateScore))
-            .add_system(update_high_score_display.after(UpdateHighScore))
-            .add_system(update_lives_display)
+            .add_system_set(
+                SystemSet::new()
+                    .in_ambiguity_set(TextDisplay)
+                    .after(SetTextSprites)
+                    .with_system(update_score_display.after(UpdateScore))
+                    .with_system(update_high_score_display.after(UpdateHighScore)),
+            )
+            .add_system(update_lives_display.after(UpdateLives))
             .init_resource::<UIAssets>();
     }
 }
+
+#[derive(AmbiguitySetLabel)]
+struct TextDisplay;
 
 #[derive(Component)]
 struct ScoreDisplay;
@@ -126,7 +134,7 @@ fn setup_ui(mut commands: Commands) {
         });
 }
 
-fn update_score_display(score: ResMut<Score>, mut query: Query<&mut Text, With<ScoreDisplay>>) {
+fn update_score_display(score: Res<Score>, mut query: Query<&mut Text, With<ScoreDisplay>>) {
     if !score.is_changed() {
         return;
     }
@@ -137,7 +145,7 @@ fn update_score_display(score: ResMut<Score>, mut query: Query<&mut Text, With<S
 }
 
 fn update_high_score_display(
-    high_score: ResMut<HighScore>,
+    high_score: Res<HighScore>,
     mut query: Query<&mut Text, With<HighScoreDisplay>>,
 ) {
     if !high_score.is_changed() {

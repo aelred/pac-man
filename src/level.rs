@@ -2,8 +2,8 @@ use crate::food::{Eater, Energizer, Food};
 use crate::ghost::{Blinky, Clyde, GhostSpawner, Inky, Pinky};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
-use crate::movement::{moving_left, MovementBundle, NextDir, StartLocation};
-use crate::player::{Player, PlayerDied};
+use crate::movement::{moving_left, MovementBundle, NextDir, SetNextDir, StartLocation};
+use crate::player::{Player, PlayerDeath, PlayerDied};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
 
@@ -28,7 +28,11 @@ impl Plugin for LevelPlugin {
         app.init_resource::<LevelAssets>()
             .add_startup_system(setup_background)
             .add_startup_system(create_level)
-            .add_system(reset_level_when_player_dies);
+            .add_system(
+                reset_level_when_player_dies
+                    .label(SetNextDir)
+                    .after(PlayerDeath),
+            );
     }
 }
 

@@ -9,7 +9,7 @@ impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Score(0))
             .insert_resource(HighScore(0))
-            .add_system(update_high_score.label(UpdateHighScore));
+            .add_system(update_high_score.label(UpdateHighScore).after(UpdateScore));
     }
 }
 

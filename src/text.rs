@@ -10,9 +10,13 @@ pub struct TextPlugin;
 
 impl Plugin for TextPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(set_sprites).init_resource::<FontHandle>();
+        app.add_system(set_sprites.label(SetTextSprites))
+            .init_resource::<FontHandle>();
     }
 }
+
+#[derive(SystemLabel)]
+pub struct SetTextSprites;
 
 #[derive(Bundle, Default)]
 pub struct TextBundle {

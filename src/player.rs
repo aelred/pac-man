@@ -1,6 +1,6 @@
 use crate::ghost::Ghost;
 use crate::grid::GridLocation;
-use crate::movement::{Dir, NextDir};
+use crate::movement::{Dir, NextDir, SetNextDir};
 use bevy::prelude::*;
 
 pub struct PlayerPlugin;
@@ -9,11 +9,21 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Lives>()
             .add_event::<PlayerDied>()
-            .add_system(player_controls)
-            .add_system(die_when_touching_ghost)
-            .add_system(lose_life_when_dying);
+            .add_system(player_controls.label(SetNextDir).before(PlayerDeath))
+            .add_system(
+                die_when_touching_ghost
+                    .label(PlayerDeath)
+                    .in_ambiguity_set(PlayerDeath),
+            )
+            .add_system(lose_life_when_dying.label(UpdateLives).after(PlayerDeath));
     }
 }
+
+#[derive(AmbiguitySetLabel, SystemLabel)]
+pub struct PlayerDeath;
+
+#[derive(SystemLabel)]
+pub struct UpdateLives;
 
 #[derive(Component)]
 pub struct Player;

@@ -1,6 +1,5 @@
-use crate::grid::GridLocation;
-use crate::mode::Mode;
-use crate::movement::SetDir;
+use crate::grid::{GridLocation, SetGridLocation};
+use crate::mode::{Mode, SetMode, TickMode};
 use crate::score::{Score, UpdateScore};
 use bevy::prelude::*;
 
@@ -9,9 +8,9 @@ pub struct FoodPlugin;
 impl Plugin for FoodPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Eat>()
-            .add_system(eat.before(SetDir))
+            .add_system(eat.after(SetGridLocation))
             .add_system(add_score.after(eat).label(UpdateScore))
-            .add_system(eat_energizer.after(eat));
+            .add_system(eat_energizer.label(SetMode).after(eat).after(TickMode));
     }
 }
 
