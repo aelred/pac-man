@@ -11,7 +11,7 @@ use crate::{
     grid::{GridLocation, SetGridLocation},
     layout::Layout,
     mode::{Mode, SetMode, TickMode},
-    movement::{Dir, NextDir, SetDir, SetNextDir},
+    movement::{Dir, NextDir, SetDir},
     player::Player,
 };
 
@@ -25,12 +25,14 @@ pub struct GhostPlugin;
 impl Plugin for GhostPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GhostSpawner>()
-            .add_system(
-                // Don't label this SetNextDir, because it never takes effect this frame
-                choose_next_dir
+            // Don't label these SetNextDir, because they never takes effect this frame
+            .add_system_set(
+                SystemSet::new()
                     .after(TickMode)
                     .after(SetDir)
-                    .before(SetGridLocation),
+                    .before(SetGridLocation)
+                    .with_system(choose_next_dir)
+                    .with_system(frightened),
             )
             .add_system_set(
                 // These systems are actually mutually exclusive - they operate on diff ghosts, or in diff modes
@@ -43,12 +45,6 @@ impl Plugin for GhostPlugin {
                     .with_system(inky::chase)
                     .with_system(clyde::chase)
                     .with_system(scatter.after(SetMode)),
-            )
-            .add_system(
-                frightened
-                    .label(SetNextDir)
-                    .in_ambiguity_set(GhostModes)
-                    .after(TickMode),
             )
             .add_system_set(
                 SystemSet::new()
