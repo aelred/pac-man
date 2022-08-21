@@ -1,9 +1,9 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-use bevy::ecs::schedule::ReportExecutionOrderAmbiguities;
 use bevy::prelude::*;
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
+use crate::from_env::ExecutionOrderAmbiguitiesPlugin;
 use crate::ghost::{Blinky, Clyde, Inky, Personality, Pinky, SetTarget, Target};
 use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
@@ -18,7 +18,7 @@ impl Plugin for InspectorPlugin {
             .add_plugin(FrameTimeDiagnosticsPlugin::default())
             .add_plugin(WorldInspectorPlugin::new())
             .add_plugin(DebugLinesPlugin::default())
-            .insert_resource(ReportExecutionOrderAmbiguities)
+            .add_plugin(ExecutionOrderAmbiguitiesPlugin)
             .init_resource::<DebugMode>()
             .insert_resource(WorldInspectorParams {
                 enabled: false,

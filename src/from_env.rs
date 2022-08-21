@@ -1,4 +1,14 @@
-use bevy::prelude::*;
+use bevy::{ecs::schedule::ReportExecutionOrderAmbiguities, prelude::*};
+
+pub struct ExecutionOrderAmbiguitiesPlugin;
+
+impl Plugin for ExecutionOrderAmbiguitiesPlugin {
+    fn build(&self, app: &mut App) {
+        if get_should_report_execution_order_ambiguities().unwrap_or_default() {
+            app.insert_resource(ReportExecutionOrderAmbiguities);
+        }
+    }
+}
 
 pub trait FromEnv: Default {
     fn from_env() -> Self {
@@ -58,4 +68,8 @@ fn get_window_monitor() -> Option<WindowPosition> {
     };
 
     Some(WindowPosition::Centered(window_monitor))
+}
+
+fn get_should_report_execution_order_ambiguities() -> Option<bool> {
+    std::env::var("REPORT_AMBIG").ok()?.parse().ok()
 }
