@@ -9,3 +9,7 @@ serve:
 # Build and run the game, restarting it whenever changes are detected
 watch:
     cargo watch -x run
+
+# Open the package docs in the browser
+docs:
+    cargo doc --open

@@ -232,6 +232,11 @@ fn frightened(
             continue;
         }
 
+        // The PRNG generates an pseudo-random memory address to read the last few bits from.
+        // These bits are translated into the direction a frightened ghost must first try.
+        // If a wall blocks the chosen direction, the ghost then attempts the remaining directions
+        // in this order: up, left, down, and right, until a passable direction is found.
+        // https://www.gamedeveloper.com/design/the-pac-man-dossier#:~:text=The%20PRNG%20generates,direction%20is%20found.
         let random_dir = *DIRECTIONS.choose(&mut rand::thread_rng()).unwrap();
 
         for candidate_dir in std::iter::once(random_dir).chain(DIRECTIONS) {
