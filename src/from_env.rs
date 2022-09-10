@@ -1,4 +1,6 @@
-use bevy::{ecs::schedule::ReportExecutionOrderAmbiguities, prelude::*};
+use bevy::{
+    diagnostic::LogDiagnosticsPlugin, ecs::schedule::ReportExecutionOrderAmbiguities, prelude::*,
+};
 
 pub struct ExecutionOrderAmbiguitiesPlugin;
 
@@ -70,10 +72,23 @@ fn get_window_monitor() -> Option<WindowPosition> {
     Some(WindowPosition::Centered(window_monitor))
 }
 
+impl FromEnv for LogDiagnosticsPlugin {
+    fn with_env_overrides(mut self) -> Self {
+        if !get_should_log_diagnostics().unwrap_or(false) {
+            self.filter = Some(vec![]);
+        }
+        self
+    }
+}
+
 fn get_should_report_execution_order_ambiguities() -> Option<bool> {
     std::env::var("EXECUTION_ORDER_AMBIGUITIES")
         .or(std::env::var("EXEC_AMBIG"))
         .ok()?
         .parse()
         .ok()
+}
+
+fn get_should_log_diagnostics() -> Option<bool> {
+    std::env::var("LOG_DIAGNOSTICS").ok()?.parse().ok()
 }

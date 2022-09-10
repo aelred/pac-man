@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
-use crate::from_env::ExecutionOrderAmbiguitiesPlugin;
+use crate::from_env::{ExecutionOrderAmbiguitiesPlugin, FromEnv};
 use crate::ghost::{Ghost, SetTarget, Target};
 use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
@@ -14,7 +14,7 @@ pub struct InspectorPlugin;
 
 impl Plugin for InspectorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(LogDiagnosticsPlugin::default())
+        app.add_plugin(LogDiagnosticsPlugin::from_env())
             .add_plugin(FrameTimeDiagnosticsPlugin::default())
             .add_plugin(WorldInspectorPlugin::new())
             .add_plugin(DebugLinesPlugin::default())
