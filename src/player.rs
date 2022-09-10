@@ -1,4 +1,4 @@
-use crate::ghost::Ghost;
+use crate::ghost::{Ghost, Frightened};
 use crate::grid::GridLocation;
 use crate::movement::{Dir, NextDir, SetNextDir};
 use bevy::prelude::*;
@@ -61,7 +61,7 @@ fn player_controls(
 
 fn die_when_touching_ghost(
     player: Query<&GridLocation, With<Player>>,
-    ghosts: Query<&GridLocation, With<Ghost>>,
+    ghosts: Query<&GridLocation, (With<Ghost>, Without<Frightened>)>,
     mut death_events: EventWriter<PlayerDied>,
 ) {
     let player = player.single();

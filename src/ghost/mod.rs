@@ -8,10 +8,11 @@ use bevy::prelude::*;
 use rand::seq::SliceRandom;
 
 use crate::{
+    food::{Eat, Food},
     grid::{GridLocation, SetGridLocation},
     layout::Layout,
     mode::{Mode, SetMode, TickMode},
-    movement::{Dir, NextDir, SetDir},
+    movement::{moving_left, Dir, NextDir, SetDir, StartLocation},
     player::Player,
 };
 
@@ -46,7 +47,10 @@ impl Plugin for GhostPlugin {
                     .with_system(clyde::chase)
                     .with_system(scatter.after(SetMode)),
             )
-            .add_system(frightened_sprites.after(SetMode));
+            .add_system(frightened_sprites.after(SetMode))
+            .add_system(become_frightened)
+            .add_system(stop_frightened)
+            .add_system(eaten);
     }
 }
 
@@ -108,6 +112,9 @@ pub struct Target(pub GridLocation);
 
 #[derive(Component, Default, Deref, DerefMut)]
 struct ScatterTarget(pub GridLocation);
+
+#[derive(Component)]
+pub struct Frightened;
 
 const DIRECTIONS: [Dir; 4] = [Dir::Up, Dir::Left, Dir::Down, Dir::Right];
 
@@ -176,6 +183,36 @@ fn frightened_sprites(
     }
 }
 
+fn become_frightened(
+    mut commands: Commands,
+    mode: Res<Mode>,
+    mut query: Query<Entity, With<Ghost>>,
+) {
+    if !mode.is_changed() || *mode != Mode::Frightened {
+        return;
+    }
+
+    for ghost in &mut query {
+        commands
+            .entity(ghost)
+            .insert(Frightened)
+            .insert(Food { points: 200 });
+    }
+}
+
+fn stop_frightened(mut commands: Commands, mode: Res<Mode>, mut query: Query<Entity, With<Ghost>>) {
+    if !mode.is_changed() || *mode == Mode::Frightened {
+        return;
+    }
+
+    for ghost in &mut query {
+        commands
+            .entity(ghost)
+            .remove::<Frightened>()
+            .remove::<Food>();
+    }
+}
+
 fn frightened(
     mode: Res<Mode>,
     layout: Res<Layout>,
@@ -205,6 +242,19 @@ fn frightened(
                 **next_dir = Some(candidate_dir);
                 break;
             }
+        }
+    }
+}
+
+fn eaten(
+    mut commands: Commands,
+    mut eat_events: EventReader<Eat>,
+    mut ghosts: Query<&StartLocation, With<Ghost>>,
+) {
+    // TODO: make ghosts do their fun animation back to the start
+    for Eat(eaten) in eat_events.iter() {
+        if let Ok(start) = ghosts.get_mut(*eaten) {
+            commands.entity(*eaten).insert_bundle(moving_left(**start));
         }
     }
 }

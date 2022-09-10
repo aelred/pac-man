@@ -1,3 +1,4 @@
+use crate::ghost::Ghost;
 use crate::grid::{GridLocation, SetGridLocation};
 use crate::mode::{Mode, SetMode, TickMode};
 use crate::score::{Score, UpdateScore};
@@ -10,7 +11,8 @@ impl Plugin for FoodPlugin {
         app.add_event::<Eat>()
             .add_system(eat.after(SetGridLocation))
             .add_system(add_score.after(eat).label(UpdateScore))
-            .add_system(eat_energizer.label(SetMode).after(eat).after(TickMode));
+            .add_system(eat_energizer.label(SetMode).after(eat).after(TickMode))
+            .add_system(destroy.after(eat));
     }
 }
 
@@ -25,10 +27,9 @@ pub struct Eater;
 #[derive(Component)]
 pub struct Energizer;
 
-struct Eat(Entity);
+pub struct Eat(pub Entity);
 
 fn eat(
-    mut commands: Commands,
     foods: Query<(Entity, &GridLocation), With<Food>>,
     eater: Query<&GridLocation, With<Eater>>,
     mut eat_events: EventWriter<Eat>,
@@ -37,8 +38,15 @@ fn eat(
         for (food_entity, food_location) in &foods {
             if eater_location == food_location {
                 eat_events.send(Eat(food_entity));
-                commands.entity(food_entity).despawn();
             }
+        }
+    }
+}
+
+fn destroy(mut commands: Commands, mut eat_events: EventReader<Eat>, ghosts: Query<&Ghost>) {
+    for Eat(food) in eat_events.iter() {
+        if !ghosts.contains(*food) {
+            commands.entity(*food).despawn();
         }
     }
 }
