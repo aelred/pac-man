@@ -1,11 +1,11 @@
-use crate::grid::{GridLocation, GridMoving, SetGridLocation, SetGridMoving};
+use crate::grid::{GridLocation, GridMoving, SetGridLocation, SetGridMoving, Speed};
 use crate::layout::Layout;
 use crate::WIDTH_TILES;
 use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 use std::time::Duration;
 
-const MOVE_DURATION: Duration = Duration::from_millis(125);
+pub const BASE_SPEED: Speed = Speed(88.0);
 
 pub struct MovementPlugin;
 
@@ -36,6 +36,7 @@ pub struct SetNextDir;
 #[derive(Bundle, Default)]
 pub struct MovementBundle {
     pub animation_timer: AnimationTimer,
+    pub speed: Speed,
 }
 
 #[derive(Component, Copy, Clone, Eq, PartialEq, Debug, Inspectable)]
@@ -68,7 +69,6 @@ pub fn moving_left(location: GridLocation) -> impl Bundle {
         GridMoving {
             destination: location.shift(Dir::Left),
             progress: 0.5,
-            duration: MOVE_DURATION,
         },
         StartLocation(location),
     )
@@ -84,7 +84,6 @@ fn move_dir(
         if !layout.collides(&new_loc) {
             commands.entity(entity).insert(GridMoving {
                 destination: new_loc,
-                duration: MOVE_DURATION,
                 ..default()
             });
         }

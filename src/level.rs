@@ -2,7 +2,9 @@ use crate::food::{Eater, Energizer, Food};
 use crate::ghost::{Blinky, Clyde, GhostSpawner, Inky, Pinky};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
-use crate::movement::{moving_left, MovementBundle, NextDir, SetNextDir, StartLocation};
+use crate::movement::{
+    moving_left, MovementBundle, NextDir, SetNextDir, StartLocation, BASE_SPEED,
+};
 use crate::player::{Player, PlayerDeath, PlayerDied};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
@@ -204,7 +206,10 @@ fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_asse
             location,
             ..default()
         })
-        .insert_bundle(MovementBundle::default())
+        .insert_bundle(MovementBundle {
+            speed: BASE_SPEED * 0.8,
+            ..default()
+        })
         .insert_bundle(moving_left(location))
         .insert_bundle((NextDir::default(), Player, Eater));
 }

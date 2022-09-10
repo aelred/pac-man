@@ -1,6 +1,6 @@
 use crate::movement::Dir;
 use bevy::prelude::*;
-use std::{ops::Mul, time::Duration};
+use std::ops::Mul;
 
 pub struct GridPlugin;
 
@@ -121,21 +121,22 @@ impl GridLocation {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 #[component(storage = "SparseSet")]
 pub struct GridMoving {
     pub destination: GridLocation,
     pub progress: f32,
-    pub duration: Duration,
 }
 
-impl Default for GridMoving {
-    fn default() -> Self {
-        GridMoving {
-            destination: Default::default(),
-            progress: 0.0,
-            duration: Duration::from_secs(1),
-        }
+// Speed in pixels per second
+#[derive(Component, Default, Deref)]
+pub struct Speed(pub f32);
+
+impl Mul<f32> for Speed {
+    type Output = Speed;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self(self.0 * rhs)
     }
 }
 
@@ -169,11 +170,13 @@ fn set_transform_from_unscaled_grid(
 fn move_on_grid(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut GridLocation, &mut GridMoving)>,
+    mut query: Query<(Entity, &Grid, &Speed, &mut GridLocation, &mut GridMoving)>,
 ) {
-    for (entity, mut location, mut moving) in query.iter_mut() {
-        // When `Duration / Duration` is stable we can simplify this
-        moving.progress += time.delta_seconds() / moving.duration.as_secs_f32();
+    for (entity, grid, speed, mut location, mut moving) in query.iter_mut() {
+        // TODO: maybe this should be reworked to have movement happen outside of the grid
+        let distance = (grid.to_vec2(moving.destination) - grid.to_vec2(*location)).length();
+
+        moving.progress += **speed * time.delta_seconds() / distance;
 
         if moving.progress >= 1.0 {
             *location = moving.destination;

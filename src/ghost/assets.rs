@@ -3,7 +3,7 @@ use bevy::{prelude::*, sprite::Rect};
 use crate::{
     grid::GridLocation,
     level::{GridEntity, GRID},
-    movement::{moving_left, MovementBundle, NextDir},
+    movement::{moving_left, MovementBundle, NextDir, BASE_SPEED},
 };
 
 use super::{Ghost, GhostSpawner, Personality, ScatterTarget, Target};
@@ -28,6 +28,10 @@ impl GhostSpawner {
             scatter_target: ScatterTarget(P::SCATTER),
             ghost,
             personality,
+            movement: MovementBundle {
+                speed: BASE_SPEED * 0.75,
+                ..default()
+            },
             ..default()
         });
     }
