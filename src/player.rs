@@ -1,6 +1,7 @@
-use crate::ghost::{Ghost, Frightened};
-use crate::grid::GridLocation;
-use crate::movement::{Dir, NextDir, SetNextDir};
+use crate::ghost::{Frightened, Ghost};
+use crate::grid::{GridLocation, Speed};
+use crate::mode::Mode;
+use crate::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
 use bevy::prelude::*;
 
 pub struct PlayerPlugin;
@@ -15,7 +16,8 @@ impl Plugin for PlayerPlugin {
                     .label(PlayerDeath)
                     .in_ambiguity_set(PlayerDeath),
             )
-            .add_system(lose_life_when_dying.label(UpdateLives).after(PlayerDeath));
+            .add_system(lose_life_when_dying.label(UpdateLives).after(PlayerDeath))
+            .add_system(set_speed);
     }
 }
 
@@ -79,4 +81,18 @@ fn lose_life_when_dying(mut deaths: EventReader<PlayerDied>, mut lives: ResMut<L
         // saturating_sub until we have game over behaviour
         **lives = lives.saturating_sub(1);
     }
+}
+
+fn set_speed(mode: Res<Mode>, mut player_speed: Query<&mut Speed, With<Player>>) {
+    if !mode.is_changed() {
+        return;
+    }
+
+    let new_speed = if let Mode::Frightened = *mode {
+        0.9
+    } else {
+        0.8
+    };
+
+    *player_speed.single_mut() = BASE_SPEED * new_speed
 }

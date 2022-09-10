@@ -9,10 +9,10 @@ use rand::seq::SliceRandom;
 
 use crate::{
     food::{Eat, Food},
-    grid::{GridLocation, SetGridLocation},
+    grid::{GridLocation, SetGridLocation, Speed},
     layout::Layout,
     mode::{Mode, SetMode, TickMode},
-    movement::{moving_left, Dir, NextDir, SetDir, StartLocation},
+    movement::{moving_left, Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
     player::Player,
 };
 
@@ -186,13 +186,15 @@ fn frightened_sprites(
 fn become_frightened(
     mut commands: Commands,
     mode: Res<Mode>,
-    mut query: Query<Entity, With<Ghost>>,
+    mut query: Query<(Entity, &mut Speed), With<Ghost>>,
 ) {
     if !mode.is_changed() || *mode != Mode::Frightened {
         return;
     }
 
-    for ghost in &mut query {
+    for (ghost, mut speed) in &mut query {
+        *speed = BASE_SPEED * 0.5;
+
         commands
             .entity(ghost)
             .insert(Frightened)
@@ -200,12 +202,18 @@ fn become_frightened(
     }
 }
 
-fn stop_frightened(mut commands: Commands, mode: Res<Mode>, mut query: Query<Entity, With<Ghost>>) {
+fn stop_frightened(
+    mut commands: Commands,
+    mode: Res<Mode>,
+    mut query: Query<(Entity, &mut Speed), With<Ghost>>,
+) {
     if !mode.is_changed() || *mode == Mode::Frightened {
         return;
     }
 
-    for ghost in &mut query {
+    for (ghost, mut speed) in &mut query {
+        *speed = BASE_SPEED * 0.75;
+
         commands
             .entity(ghost)
             .remove::<Frightened>()
