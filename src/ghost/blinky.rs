@@ -6,7 +6,7 @@ use crate::{
     player::Player,
 };
 
-use super::{Ghost, Mode, Personality, Target};
+use super::{Ghost, Mode, Personality, Respawning, Target};
 
 #[derive(Component, Default)]
 pub struct Blinky;
@@ -23,7 +23,7 @@ impl Personality for Blinky {
 
 pub fn chase(
     mode: Res<Mode>,
-    mut query: Query<&mut Target, With<Blinky>>,
+    mut query: Query<&mut Target, (With<Blinky>, Without<Respawning>)>,
     player: Query<&GridLocation, With<Player>>,
 ) {
     if *mode != Mode::Chase {

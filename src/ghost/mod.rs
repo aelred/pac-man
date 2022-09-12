@@ -12,7 +12,7 @@ use crate::{
     grid::{GridLocation, SetGridLocation, Speed},
     layout::Layout,
     mode::{Mode, SetMode, TickMode},
-    movement::{moving_left, Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
+    movement::{Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
     player::Player,
 };
 
@@ -47,10 +47,10 @@ impl Plugin for GhostPlugin {
                     .with_system(clyde::chase)
                     .with_system(scatter.after(SetMode)),
             )
-            .add_system(frightened_sprites.after(SetMode))
-            .add_system(become_frightened)
-            .add_system(stop_frightened)
-            .add_system(eaten);
+            .add_system(become_frightened.after(SetMode))
+            .add_system(stop_frightened.after(SetMode))
+            .add_system(start_respawning_eaten_ghost.after(SetTarget))
+            .add_system(finish_respawning_eaten_ghost.after(SetTarget));
     }
 }
 
@@ -66,6 +66,7 @@ pub struct GhostSpawner {
     inky: Handle<TextureAtlas>,
     clyde: Handle<TextureAtlas>,
     frightened: Handle<TextureAtlas>,
+    respawning: Handle<TextureAtlas>,
 }
 
 impl GhostSpawner {
@@ -107,27 +108,31 @@ impl Ghost {
     }
 }
 
-#[derive(Component, Default, Deref, DerefMut)]
+#[derive(Component, Default, Deref, DerefMut, Copy, Clone)]
 pub struct Target(pub GridLocation);
 
 #[derive(Component, Default, Deref, DerefMut)]
 struct ScatterTarget(pub GridLocation);
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Frightened;
+
+#[derive(Component)]
+pub struct Respawning;
+
+#[derive(Bundle, Default)]
+struct FrightenedBundle {
+    frightened: Frightened,
+    food: Food,
+}
 
 const DIRECTIONS: [Dir; 4] = [Dir::Up, Dir::Left, Dir::Down, Dir::Right];
 
 // Ghosts decide on their next direction one grid location BEFORE
 fn choose_next_dir(
-    mode: Res<Mode>,
     layout: Res<Layout>,
     mut query: Query<(&Dir, &mut NextDir, &GridLocation, &Target), Changed<GridLocation>>,
 ) {
-    if *mode == Mode::Frightened {
-        return;
-    }
-
     for (dir, mut next_dir, loc, target) in &mut query {
         let next_loc = loc.shift(*dir);
 
@@ -135,25 +140,11 @@ fn choose_next_dir(
             continue;
         }
 
-        let mut distance_to_target = f32::MAX;
-
-        for candidate_dir in DIRECTIONS {
-            let candidate_loc = next_loc.shift(candidate_dir);
-            let collision = layout.collides(&candidate_loc);
-
-            let distance = candidate_loc
-                .to_unscaled_vec2()
-                .distance_squared(target.to_unscaled_vec2());
-
-            if !collision && candidate_loc != *loc && distance < distance_to_target {
-                **next_dir = Some(candidate_dir);
-                distance_to_target = distance;
-            }
-        }
+        **next_dir = closest_dir_to_target(&layout, next_loc, *target, Some(*loc));
     }
 }
 
-fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target)>) {
+fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target), Without<Respawning>>) {
     if *mode != Mode::Scatter {
         return;
     }
@@ -165,74 +156,64 @@ fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target)>) {
     }
 }
 
-fn frightened_sprites(
-    mode: Res<Mode>,
-    assets: Res<GhostSpawner>,
-    mut query: Query<(&Ghost, &mut Handle<TextureAtlas>)>,
-) {
-    if !mode.is_changed() {
-        return;
-    }
-
-    for (ghost, mut ghost_atlas) in &mut query {
-        *ghost_atlas = if *mode == Mode::Frightened {
-            assets.frightened.clone()
-        } else {
-            assets.get_atlas(ghost)
-        };
-    }
-}
-
 fn become_frightened(
     mut commands: Commands,
     mode: Res<Mode>,
-    mut query: Query<(Entity, &mut Speed), With<Ghost>>,
+    assets: Res<GhostSpawner>,
+    mut query: Query<
+        (Entity, &mut Handle<TextureAtlas>, &mut Speed),
+        (With<Ghost>, Without<Respawning>),
+    >,
 ) {
     if !mode.is_changed() || *mode != Mode::Frightened {
         return;
     }
 
-    for (ghost, mut speed) in &mut query {
+    for (entity, mut texture, mut speed) in &mut query {
         *speed = BASE_SPEED * 0.5;
+        *texture = assets.frightened.clone();
 
         commands
-            .entity(ghost)
-            .insert(Frightened)
-            .insert(Food { points: 200 });
+            .entity(entity)
+            .insert_bundle(FrightenedBundle {
+                food: Food { points: 200 },
+                ..default()
+            })
+            .remove::<Target>();
     }
 }
 
 fn stop_frightened(
     mut commands: Commands,
     mode: Res<Mode>,
-    mut query: Query<(Entity, &mut Speed), With<Ghost>>,
+    assets: Res<GhostSpawner>,
+    mut query: Query<
+        (Entity, &Ghost, &mut Handle<TextureAtlas>, &mut Speed),
+        (With<Ghost>, Without<Respawning>),
+    >,
 ) {
     if !mode.is_changed() || *mode == Mode::Frightened {
         return;
     }
 
-    for (ghost, mut speed) in &mut query {
+    for (entity, ghost, mut texture, mut speed) in &mut query {
         *speed = BASE_SPEED * 0.75;
+        *texture = assets.get_atlas(ghost);
 
         commands
-            .entity(ghost)
-            .remove::<Frightened>()
-            .remove::<Food>();
+            .entity(entity)
+            .remove_bundle::<FrightenedBundle>()
+            .insert(Target::default());
     }
 }
 
 fn frightened(
-    mode: Res<Mode>,
     layout: Res<Layout>,
     mut query: Query<
         (&Dir, &mut NextDir, &GridLocation),
-        (With<Ghost>, Changed<GridLocation>, Without<Player>),
+        (With<Frightened>, Changed<GridLocation>, Without<Player>),
     >,
 ) {
-    if *mode != Mode::Frightened {
-        return;
-    }
-
     for (dir, mut next_dir, loc) in &mut query {
         let next_loc = loc.shift(*dir);
 
@@ -259,15 +240,88 @@ fn frightened(
     }
 }
 
-fn eaten(
+fn start_respawning_eaten_ghost(
     mut commands: Commands,
+    layout: Res<Layout>,
+    assets: Res<GhostSpawner>,
     mut eat_events: EventReader<Eat>,
-    mut ghosts: Query<&StartLocation, With<Ghost>>,
+    mut ghosts: Query<
+        (
+            &mut Handle<TextureAtlas>,
+            &mut Speed,
+            &mut NextDir,
+            &GridLocation,
+            &StartLocation,
+        ),
+        With<Ghost>,
+    >,
 ) {
-    // TODO: make ghosts do their fun animation back to the start
     for Eat(eaten) in eat_events.iter() {
-        if let Ok(start) = ghosts.get_mut(*eaten) {
-            commands.entity(*eaten).insert_bundle(moving_left(**start));
+        if let Ok((mut texture, mut speed, mut next_dir, location, start)) = ghosts.get_mut(*eaten)
+        {
+            let target = Target(**start);
+
+            commands
+                .entity(*eaten)
+                .insert(Respawning)
+                .insert(target)
+                .remove_bundle::<FrightenedBundle>();
+
+            *texture = assets.respawning.clone();
+            // This speed is just a guess
+            *speed = BASE_SPEED * 2.0;
+            **next_dir = closest_dir_to_target(&layout, *location, target, None);
         }
     }
+}
+
+fn finish_respawning_eaten_ghost(
+    mut commands: Commands,
+    assets: Res<GhostSpawner>,
+    mut respawning: Query<
+        (
+            Entity,
+            &Ghost,
+            &StartLocation,
+            &GridLocation,
+            &mut Speed,
+            &mut Handle<TextureAtlas>,
+        ),
+        (With<Respawning>, Changed<GridLocation>),
+    >,
+) {
+    for (entity, ghost, start, location, mut speed, mut texture) in &mut respawning {
+        if **start == *location {
+            *speed = BASE_SPEED * 0.75;
+            *texture = assets.get_atlas(ghost);
+
+            commands.entity(entity).remove::<Respawning>();
+        }
+    }
+}
+
+fn closest_dir_to_target(
+    layout: &Layout,
+    source: GridLocation,
+    target: Target,
+    original_loc: Option<GridLocation>,
+) -> Option<Dir> {
+    let mut best_distance = f32::MAX;
+    let mut best_dir = None;
+
+    for dir in DIRECTIONS {
+        let loc = source.shift(dir);
+        let collision = layout.collides(&loc);
+
+        let distance = loc
+            .to_unscaled_vec2()
+            .distance_squared(target.to_unscaled_vec2());
+
+        if !collision && original_loc != Some(loc) && distance < best_distance {
+            best_dir = Some(dir);
+            best_distance = distance;
+        }
+    }
+
+    best_dir
 }

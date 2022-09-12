@@ -1,4 +1,4 @@
-use crate::ghost::{Frightened, Ghost};
+use crate::ghost::{Frightened, Ghost, Respawning};
 use crate::grid::{GridLocation, Speed};
 use crate::mode::Mode;
 use crate::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
@@ -63,7 +63,7 @@ fn player_controls(
 
 fn die_when_touching_ghost(
     player: Query<&GridLocation, With<Player>>,
-    ghosts: Query<&GridLocation, (With<Ghost>, Without<Frightened>)>,
+    ghosts: Query<&GridLocation, (With<Ghost>, Without<Frightened>, Without<Respawning>)>,
     mut death_events: EventWriter<PlayerDied>,
 ) {
     let player = player.single();

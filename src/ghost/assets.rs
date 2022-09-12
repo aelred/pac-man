@@ -82,12 +82,24 @@ impl FromWorld for GhostSpawner {
             Vec2::new(456.0, 112.0),
         );
 
-        let mut frightened_atlas = TextureAtlas::new_empty(sheet, Vec2::new(680.0, 248.0));
+        let mut frightened_atlas = TextureAtlas::new_empty(sheet.clone(), Vec2::new(680.0, 248.0));
         // Add same two sprites four times (the sprites are the same for each direction
         for _ in 0..4 {
             for ix in 0..2 {
                 let min = Vec2::new(584.0 + ix as f32 * 16.0, 64.0);
                 frightened_atlas.add_texture(Rect {
+                    min,
+                    max: min + tile_size,
+                });
+            }
+        }
+
+        let mut respawning_atlas = TextureAtlas::new_empty(sheet, Vec2::new(680.0, 248.0));
+        // Add each sprite twice (because the respawning eyes don't animate)
+        for ix in 0..4 {
+            for _ in 0..2 {
+                let min = Vec2::new(584.0 + ix as f32 * 16.0, 80.0);
+                respawning_atlas.add_texture(Rect {
                     min,
                     max: min + tile_size,
                 });
@@ -100,6 +112,7 @@ impl FromWorld for GhostSpawner {
             inky: texture_atlases.add(inky_atlas),
             clyde: texture_atlases.add(clyde_atlas),
             frightened: texture_atlases.add(frightened_atlas),
+            respawning: texture_atlases.add(respawning_atlas),
         }
     }
 }

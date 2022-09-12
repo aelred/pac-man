@@ -3,10 +3,12 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
+use crate::food::{Eat, Food};
 use crate::from_env::{ExecutionOrderAmbiguitiesPlugin, FromEnv};
-use crate::ghost::{Ghost, SetTarget, Target};
+use crate::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, SetTarget, Target};
 use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
+use crate::mode::Mode;
 use crate::movement::{Dir, NextDir};
 use crate::player::{PlayerDeath, PlayerDied};
 
@@ -31,6 +33,8 @@ impl Plugin for InspectorPlugin {
                     .label(PlayerDeath)
                     .in_ambiguity_set(PlayerDeath),
             )
+            .add_system(trigger_frightened)
+            .add_system(trigger_eat_ghost)
             .add_system(draw_grid.after(toggle_debug_mode))
             .add_system(draw_target.after(SetTarget).after(draw_grid))
             .register_inspectable::<NextDir>()
@@ -59,6 +63,50 @@ fn toggle_inspector(
 fn trigger_death(keyboard_input: Res<Input<KeyCode>>, mut death_events: EventWriter<PlayerDied>) {
     if keyboard_input.just_pressed(KeyCode::Period) {
         death_events.send(PlayerDied);
+    }
+}
+
+fn trigger_frightened(keyboard_input: Res<Input<KeyCode>>, mut mode: ResMut<Mode>) {
+    if keyboard_input.just_pressed(KeyCode::Comma) {
+        *mode = Mode::Frightened;
+    }
+}
+
+fn trigger_eat_ghost(
+    debug_mode: Res<DebugMode>,
+    keyboard_input: Res<Input<KeyCode>>,
+    blinky: Query<Entity, (With<Blinky>, With<Food>)>,
+    pinky: Query<Entity, (With<Pinky>, With<Food>)>,
+    inky: Query<Entity, (With<Inky>, With<Food>)>,
+    clyde: Query<Entity, (With<Clyde>, With<Food>)>,
+    mut eat_events: EventWriter<Eat>,
+) {
+    if !debug_mode.0 {
+        return;
+    }
+
+    if keyboard_input.just_pressed(KeyCode::B) {
+        for ghost in &blinky {
+            eat_events.send(Eat(ghost));
+        }
+    }
+
+    if keyboard_input.just_pressed(KeyCode::P) {
+        for ghost in &pinky {
+            eat_events.send(Eat(ghost));
+        }
+    }
+
+    if keyboard_input.just_pressed(KeyCode::I) {
+        for ghost in &inky {
+            eat_events.send(Eat(ghost));
+        }
+    }
+
+    if keyboard_input.just_pressed(KeyCode::C) {
+        for ghost in &clyde {
+            eat_events.send(Eat(ghost));
+        }
     }
 }
 

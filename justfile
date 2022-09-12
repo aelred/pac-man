@@ -1,3 +1,5 @@
+export RUST_BACKTRACE := "1"
+
 # Build and run the game
 run:
     cargo run

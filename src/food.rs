@@ -16,7 +16,7 @@ impl Plugin for FoodPlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Food {
     pub points: u32,
 }
@@ -53,7 +53,7 @@ fn destroy(mut commands: Commands, mut eat_events: EventReader<Eat>, ghosts: Que
 
 fn add_score(mut eat_events: EventReader<Eat>, mut score: ResMut<Score>, query: Query<&Food>) {
     for Eat(food) in eat_events.iter() {
-        *score += query.get(*food).unwrap().points;
+        *score += query.get(*food).expect("Eaten thing is not Food").points;
     }
 }
 

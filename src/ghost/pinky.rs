@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{grid::GridLocation, level::HEIGHT_TILES, movement::Dir, player::Player};
 
-use super::{Ghost, Mode, Personality, Target};
+use super::{Ghost, Mode, Personality, Respawning, Target};
 
 #[derive(Component, Default)]
 pub struct Pinky;
@@ -19,7 +19,7 @@ impl Personality for Pinky {
 
 pub fn chase(
     mode: Res<Mode>,
-    mut query: Query<&mut Target, With<Pinky>>,
+    mut query: Query<&mut Target, (With<Pinky>, Without<Respawning>)>,
     player: Query<(&GridLocation, &Dir), With<Player>>,
 ) {
     if *mode != Mode::Chase {
