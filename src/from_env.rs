@@ -83,7 +83,7 @@ impl FromEnv for LogDiagnosticsPlugin {
 
 fn get_should_report_execution_order_ambiguities() -> Option<bool> {
     std::env::var("EXECUTION_ORDER_AMBIGUITIES")
-        .or(std::env::var("EXEC_AMBIG"))
+        .or_else(|_| std::env::var("EXEC_AMBIG"))
         .ok()?
         .parse()
         .ok()

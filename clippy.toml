@@ -1,0 +1,2 @@
+# Clippy thinks normal Bevy query types are too complex
+type-complexity-threshold = 350

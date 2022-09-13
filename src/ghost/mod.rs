@@ -9,11 +9,10 @@ use rand::seq::SliceRandom;
 
 use crate::{
     food::{Eat, Food},
-    grid::{GridLocation, SetGridLocation, Speed},
+    grid::{GridLocation, SetGridLocation},
     layout::Layout,
     mode::{Mode, SetMode, TickMode},
     movement::{Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
-    player::Player,
 };
 
 pub use blinky::Blinky;
@@ -126,6 +125,8 @@ struct FrightenedBundle {
     food: Food,
 }
 
+pub type AliveGhost = (With<Ghost>, Without<Respawning>);
+
 const DIRECTIONS: [Dir; 4] = [Dir::Up, Dir::Left, Dir::Down, Dir::Right];
 
 // Ghosts decide on their next direction one grid location BEFORE
@@ -146,7 +147,7 @@ fn choose_next_dir(
 
 fn scatter(
     mode: Res<Mode>,
-    mut query: Query<(Option<&Name>, &ScatterTarget, &mut Target), Without<Respawning>>,
+    mut query: Query<(Option<&Name>, &ScatterTarget, &mut Target), AliveGhost>,
 ) {
     if *mode != Mode::Scatter {
         return;
@@ -169,25 +170,21 @@ fn become_frightened(
     mut commands: Commands,
     mode: Res<Mode>,
     assets: Res<GhostSpawner>,
-    mut query: Query<
-        (Entity, &mut Handle<TextureAtlas>, &mut Speed),
-        (With<Ghost>, Without<Respawning>),
-    >,
+    mut query: Query<Entity, AliveGhost>,
 ) {
     if !mode.is_changed() || *mode != Mode::Frightened {
         return;
     }
 
-    for (entity, mut texture, mut speed) in &mut query {
-        *speed = BASE_SPEED * 0.5;
-        *texture = assets.frightened.clone();
-
+    for entity in &mut query {
         commands
             .entity(entity)
             .insert_bundle(FrightenedBundle {
                 food: Food { points: 200 },
                 ..default()
             })
+            .insert(BASE_SPEED * 0.5)
+            .insert(assets.frightened.clone())
             .remove::<Target>();
     }
 }
@@ -196,22 +193,18 @@ fn stop_frightened(
     mut commands: Commands,
     mode: Res<Mode>,
     assets: Res<GhostSpawner>,
-    mut query: Query<
-        (Entity, &Ghost, &mut Handle<TextureAtlas>, &mut Speed),
-        (With<Frightened>, Without<Respawning>),
-    >,
+    mut query: Query<(Entity, &Ghost), With<Frightened>>,
 ) {
     if !mode.is_changed() || *mode == Mode::Frightened {
         return;
     }
 
-    for (entity, ghost, mut texture, mut speed) in &mut query {
-        *speed = BASE_SPEED * 0.75;
-        *texture = assets.get_atlas(ghost);
-
+    for (entity, ghost) in &mut query {
         commands
             .entity(entity)
             .remove_bundle::<FrightenedBundle>()
+            .insert(BASE_SPEED * 0.75)
+            .insert(assets.get_atlas(ghost))
             .insert(Target::default());
     }
 }
@@ -220,7 +213,7 @@ fn frightened(
     layout: Res<Layout>,
     mut query: Query<
         (&Dir, &mut NextDir, &GridLocation),
-        (With<Frightened>, Changed<GridLocation>, Without<Player>),
+        (With<Frightened>, Changed<GridLocation>),
     >,
 ) {
     for (dir, mut next_dir, loc) in &mut query {
@@ -254,32 +247,24 @@ fn start_respawning_eaten_ghost(
     layout: Res<Layout>,
     assets: Res<GhostSpawner>,
     mut eat_events: EventReader<Eat>,
-    mut ghosts: Query<
-        (
-            &mut Handle<TextureAtlas>,
-            &mut Speed,
-            &mut NextDir,
-            &GridLocation,
-            &StartLocation,
-        ),
-        With<Ghost>,
-    >,
+    mut ghosts: Query<(&GridLocation, &StartLocation), With<Ghost>>,
 ) {
     for Eat(eaten) in eat_events.iter() {
-        if let Ok((mut texture, mut speed, mut next_dir, location, start)) = ghosts.get_mut(*eaten)
-        {
+        if let Ok((location, start)) = ghosts.get_mut(*eaten) {
             let target = Target(**start);
 
             commands
                 .entity(*eaten)
                 .insert(Respawning)
                 .insert(target)
+                // This speed is just a guess
+                .insert(BASE_SPEED * 2.0)
+                .insert(assets.respawning.clone())
                 .remove_bundle::<FrightenedBundle>();
 
-            *texture = assets.respawning.clone();
-            // This speed is just a guess
-            *speed = BASE_SPEED * 2.0;
-            **next_dir = closest_dir_to_target(&layout, *location, target, None);
+            if let Some(dir) = closest_dir_to_target(&layout, *location, target, None) {
+                commands.entity(*eaten).insert(dir);
+            }
         }
     }
 }
@@ -288,23 +273,17 @@ fn finish_respawning_eaten_ghost(
     mut commands: Commands,
     assets: Res<GhostSpawner>,
     mut respawning: Query<
-        (
-            Entity,
-            &Ghost,
-            &StartLocation,
-            &GridLocation,
-            &mut Speed,
-            &mut Handle<TextureAtlas>,
-        ),
+        (Entity, &Ghost, &StartLocation, &GridLocation),
         (With<Respawning>, Changed<GridLocation>),
     >,
 ) {
-    for (entity, ghost, start, location, mut speed, mut texture) in &mut respawning {
+    for (entity, ghost, start, location) in &mut respawning {
         if **start == *location {
-            *speed = BASE_SPEED * 0.75;
-            *texture = assets.get_atlas(ghost);
-
-            commands.entity(entity).remove::<Respawning>();
+            commands
+                .entity(entity)
+                .insert(BASE_SPEED * 0.75)
+                .insert(assets.get_atlas(ghost))
+                .remove::<Respawning>();
         }
     }
 }
