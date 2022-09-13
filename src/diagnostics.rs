@@ -8,7 +8,7 @@ use crate::from_env::{ExecutionOrderAmbiguitiesPlugin, FromEnv};
 use crate::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, SetTarget, Target};
 use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
-use crate::mode::Mode;
+use crate::mode::FrightenedMode;
 use crate::movement::{Dir, NextDir};
 use crate::player::{PlayerDeath, PlayerDied};
 
@@ -68,9 +68,9 @@ fn trigger_death(keyboard_input: Res<Input<KeyCode>>, mut death_events: EventWri
     }
 }
 
-fn trigger_frightened(keyboard_input: Res<Input<KeyCode>>, mut mode: ResMut<Mode>) {
+fn trigger_frightened(keyboard_input: Res<Input<KeyCode>>, mut mode: ResMut<FrightenedMode>) {
     if keyboard_input.just_pressed(KeyCode::Comma) {
-        *mode = Mode::Frightened;
+        *mode = FrightenedMode::Enabled;
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::ghost::Ghost;
 use crate::grid::{GridLocation, SetGridLocation};
-use crate::mode::{Mode, SetMode, TickMode};
+use crate::mode::{FrightenedMode, SetMode, TickMode};
 use crate::score::{Score, UpdateScore};
 use bevy::prelude::*;
 
@@ -60,11 +60,11 @@ fn add_score(mut eat_events: EventReader<Eat>, mut score: ResMut<Score>, query: 
 fn eat_energizer(
     mut eat_events: EventReader<Eat>,
     energizers: Query<&Energizer>,
-    mut mode: ResMut<Mode>,
+    mut mode: ResMut<FrightenedMode>,
 ) {
     for Eat(eaten) in eat_events.iter() {
         if energizers.contains(*eaten) {
-            *mode = Mode::Frightened;
+            *mode = FrightenedMode::Enabled;
         }
     }
 }

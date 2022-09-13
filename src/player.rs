@@ -1,6 +1,6 @@
-use crate::ghost::{AliveGhost, Frightened};
+use crate::ghost::ActiveGhost;
 use crate::grid::{GridLocation, Speed};
-use crate::mode::Mode;
+use crate::mode::FrightenedMode;
 use crate::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
 use bevy::prelude::*;
 
@@ -63,7 +63,7 @@ fn player_controls(
 
 fn die_when_touching_ghost(
     player: Query<&GridLocation, With<Player>>,
-    ghosts: Query<&GridLocation, (AliveGhost, Without<Frightened>)>,
+    ghosts: Query<&GridLocation, ActiveGhost>,
     mut death_events: EventWriter<PlayerDied>,
 ) {
     let player = player.single();
@@ -83,12 +83,12 @@ fn lose_life_when_dying(mut deaths: EventReader<PlayerDied>, mut lives: ResMut<L
     }
 }
 
-fn set_speed(mode: Res<Mode>, mut player_speed: Query<&mut Speed, With<Player>>) {
+fn set_speed(mode: Res<FrightenedMode>, mut player_speed: Query<&mut Speed, With<Player>>) {
     if !mode.is_changed() {
         return;
     }
 
-    let new_speed = if let Mode::Frightened = *mode {
+    let new_speed = if *mode == FrightenedMode::Enabled {
         0.9
     } else {
         0.8

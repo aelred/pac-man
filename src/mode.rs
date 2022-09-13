@@ -7,6 +7,7 @@ pub struct ModePlugin;
 impl Plugin for ModePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Mode>()
+            .init_resource::<FrightenedMode>()
             .init_resource::<ModeTimer>()
             .init_resource::<FrightenedTimer>()
             .add_system(tick_mode.label(TickMode).label(SetMode))
@@ -30,13 +31,19 @@ pub struct SetMode;
 pub enum Mode {
     Scatter,
     Chase,
-    Frightened,
 }
 
 impl Default for Mode {
     fn default() -> Self {
         MODE_TABLE[0].0
     }
+}
+
+#[derive(Default, PartialEq, Eq)]
+pub enum FrightenedMode {
+    #[default]
+    Disabled,
+    Enabled,
 }
 
 struct ModeTimer {
@@ -86,9 +93,9 @@ fn tick_mode(time: Res<Time>, mut mode_timer: ResMut<ModeTimer>, mut mode: ResMu
 fn start_frightened_timer(
     mut mode_timer: ResMut<ModeTimer>,
     mut frightened_timer: ResMut<FrightenedTimer>,
-    mode: Res<Mode>,
+    mode: Res<FrightenedMode>,
 ) {
-    if mode.is_changed() && *mode == Mode::Frightened {
+    if mode.is_changed() && *mode == FrightenedMode::Enabled {
         mode_timer.timer.pause();
         frightened_timer.reset();
         frightened_timer.unpause();
@@ -99,12 +106,12 @@ fn tick_frightened(
     time: Res<Time>,
     mut mode_timer: ResMut<ModeTimer>,
     mut frightened_timer: ResMut<FrightenedTimer>,
-    mut mode: ResMut<Mode>,
+    mut mode: ResMut<FrightenedMode>,
 ) {
     if frightened_timer.tick(time.delta()).finished() {
         mode_timer.timer.unpause();
         frightened_timer.pause();
-        *mode = MODE_TABLE[mode_timer.index].0;
+        *mode = FrightenedMode::Disabled;
     }
 }
 

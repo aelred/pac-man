@@ -11,7 +11,7 @@ use crate::{
     food::{Eat, Food},
     grid::{GridLocation, SetGridLocation},
     layout::Layout,
-    mode::{Mode, SetMode, TickMode},
+    mode::{FrightenedMode, Mode, SetMode, TickMode},
     movement::{Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
 };
 
@@ -125,7 +125,7 @@ struct FrightenedBundle {
     food: Food,
 }
 
-pub type AliveGhost = (With<Ghost>, Without<Respawning>);
+pub type ActiveGhost = (With<Ghost>, Without<Respawning>, Without<Frightened>);
 
 const DIRECTIONS: [Dir; 4] = [Dir::Up, Dir::Left, Dir::Down, Dir::Right];
 
@@ -147,7 +147,7 @@ fn choose_next_dir(
 
 fn scatter(
     mode: Res<Mode>,
-    mut query: Query<(Option<&Name>, &ScatterTarget, &mut Target), AliveGhost>,
+    mut query: Query<(Option<&Name>, &ScatterTarget, &mut Target), ActiveGhost>,
 ) {
     if *mode != Mode::Scatter {
         return;
@@ -168,11 +168,11 @@ fn scatter(
 
 fn become_frightened(
     mut commands: Commands,
-    mode: Res<Mode>,
+    mode: Res<FrightenedMode>,
     assets: Res<GhostSpawner>,
-    mut query: Query<Entity, AliveGhost>,
+    mut query: Query<Entity, ActiveGhost>,
 ) {
-    if !mode.is_changed() || *mode != Mode::Frightened {
+    if !mode.is_changed() || *mode == FrightenedMode::Disabled {
         return;
     }
 
@@ -191,11 +191,11 @@ fn become_frightened(
 
 fn stop_frightened(
     mut commands: Commands,
-    mode: Res<Mode>,
+    mode: Res<FrightenedMode>,
     assets: Res<GhostSpawner>,
     mut query: Query<(Entity, &Ghost), With<Frightened>>,
 ) {
-    if !mode.is_changed() || *mode == Mode::Frightened {
+    if !mode.is_changed() || *mode == FrightenedMode::Enabled {
         return;
     }
 

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{grid::GridLocation, player::Player};
 
-use super::{AliveGhost, Ghost, Mode, Personality, Target};
+use super::{ActiveGhost, Ghost, Mode, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Clyde;
@@ -16,7 +16,7 @@ impl Personality for Clyde {
 
 pub fn chase(
     mode: Res<Mode>,
-    mut query: Query<(&GridLocation, &mut Target), (AliveGhost, With<Clyde>)>,
+    mut query: Query<(&GridLocation, &mut Target), (ActiveGhost, With<Clyde>)>,
     player: Query<&GridLocation, With<Player>>,
 ) {
     if *mode != Mode::Chase {
