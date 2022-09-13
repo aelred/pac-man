@@ -37,6 +37,8 @@ impl Plugin for InspectorPlugin {
             .add_system(trigger_eat_ghost)
             .add_system(draw_grid.after(toggle_debug_mode))
             .add_system(draw_target.after(SetTarget).after(draw_grid))
+            .add_system(draw_dir)
+            .add_system(draw_next_dir)
             .register_inspectable::<NextDir>()
             .register_inspectable::<Dir>();
     }
@@ -144,5 +146,45 @@ fn draw_target(
         let y = (Vec2::Y * grid.size / 4.0).extend(0.0);
         lines.line_colored(target - x - y, target + x + y, 0.0, ghost.color());
         lines.line_colored(target - x + y, target + x - y, 0.0, ghost.color());
+    }
+}
+
+fn draw_dir(
+    debug_mode: Res<DebugMode>,
+    mut lines: ResMut<DebugLines>,
+    query: Query<(&Dir, &Grid, &GridLocation)>,
+) {
+    if !debug_mode.0 {
+        return;
+    }
+
+    for (dir, grid, location) in &query {
+        let next_location = location.shift(*dir);
+        let start = grid.to_vec2(*location).extend(0.0);
+        let end = grid.to_vec2(next_location).extend(0.0);
+        lines.line(start, end, 0.0);
+    }
+}
+
+fn draw_next_dir(
+    debug_mode: Res<DebugMode>,
+    mut lines: ResMut<DebugLines>,
+    query: Query<(&Dir, &NextDir, &Grid, &GridLocation)>,
+) {
+    if !debug_mode.0 {
+        return;
+    }
+
+    for (dir, next_dir, grid, location) in &query {
+        let next_dir = match **next_dir {
+            Some(n) => n,
+            None => continue,
+        };
+
+        let next_location = location.shift(*dir);
+        let final_location = next_location.shift(next_dir);
+        let start = grid.to_vec2(next_location).extend(0.0);
+        let end = grid.to_vec2(final_location).extend(0.0);
+        lines.line(start, end, 0.0);
     }
 }

@@ -144,13 +144,22 @@ fn choose_next_dir(
     }
 }
 
-fn scatter(mode: Res<Mode>, mut query: Query<(&ScatterTarget, &mut Target), Without<Respawning>>) {
+fn scatter(
+    mode: Res<Mode>,
+    mut query: Query<(Option<&Name>, &ScatterTarget, &mut Target), Without<Respawning>>,
+) {
     if *mode != Mode::Scatter {
         return;
     }
 
-    for (scatter_target, mut target) in &mut query {
+    for (name, scatter_target, mut target) in &mut query {
         if **target != **scatter_target {
+            debug!(
+                "{} scattering: changing target from {:?} to {:?}",
+                name.unwrap_or(&Name::new("<Unknown>")),
+                **target,
+                **scatter_target
+            );
             **target = **scatter_target;
         }
     }
@@ -189,7 +198,7 @@ fn stop_frightened(
     assets: Res<GhostSpawner>,
     mut query: Query<
         (Entity, &Ghost, &mut Handle<TextureAtlas>, &mut Speed),
-        (With<Ghost>, Without<Respawning>),
+        (With<Frightened>, Without<Respawning>),
     >,
 ) {
     if !mode.is_changed() || *mode == Mode::Frightened {

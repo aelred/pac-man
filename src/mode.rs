@@ -78,6 +78,7 @@ fn tick_mode(time: Res<Time>, mut mode_timer: ResMut<ModeTimer>, mut mode: ResMu
         let new_duration = Duration::from_secs_f32(new_duration);
         mode_timer.timer.set_duration(new_duration);
     } else {
+        mode_timer.timer.reset();
         mode_timer.timer.pause();
     }
 }
