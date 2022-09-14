@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{grid::GridLocation, level::WIDTH_TILES, movement::Dir, player::Player};
+use crate::{actor::movement::Dir, actor::player::Player, grid::GridLocation, level::WIDTH_TILES};
 
 use super::{blinky::Blinky, ActiveGhost, Ghost, Mode, Personality, Target};
 

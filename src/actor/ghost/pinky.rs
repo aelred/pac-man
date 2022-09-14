@@ -1,8 +1,11 @@
 use bevy::prelude::*;
 
-use crate::{grid::GridLocation, level::HEIGHT_TILES, movement::Dir, player::Player};
+use crate::{
+    actor::mode::Mode, actor::movement::Dir, actor::player::Player, grid::GridLocation,
+    level::HEIGHT_TILES,
+};
 
-use super::{ActiveGhost, Ghost, Mode, Personality, Target};
+use super::{ActiveGhost, Ghost, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Pinky;

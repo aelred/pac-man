@@ -1,6 +1,6 @@
-use crate::ghost::Ghost;
+use crate::actor::ghost::Ghost;
+use crate::actor::mode::{FrightenedMode, SetMode, TickMode};
 use crate::grid::{GridLocation, SetGridLocation};
-use crate::mode::{FrightenedMode, SetMode, TickMode};
 use crate::score::{Score, UpdateScore};
 use bevy::prelude::*;
 

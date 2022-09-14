@@ -8,11 +8,11 @@ use bevy::prelude::*;
 use rand::seq::SliceRandom;
 
 use crate::{
+    actor::mode::{FrightenedMode, Mode, SetMode, TickMode},
+    actor::movement::{Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
     food::{Eat, Food},
     grid::{GridLocation, SetGridLocation},
     layout::Layout,
-    mode::{FrightenedMode, Mode, SetMode, TickMode},
-    movement::{Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
 };
 
 pub use blinky::Blinky;

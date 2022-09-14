@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 
 use crate::{
+    actor::mode::Mode,
+    actor::player::Player,
     grid::GridLocation,
     level::{HEIGHT_TILES, WIDTH_TILES},
-    player::Player,
 };
 
-use super::{ActiveGhost, Ghost, Mode, Personality, Target};
+use super::{ActiveGhost, Ghost, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Blinky;

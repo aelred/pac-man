@@ -1,9 +1,9 @@
 use bevy::{prelude::*, sprite::Rect};
 
 use crate::{
+    actor::movement::{moving_left, MovementBundle, NextDir, BASE_SPEED},
     grid::GridLocation,
     level::{GridEntity, GRID},
-    movement::{moving_left, MovementBundle, NextDir, BASE_SPEED},
 };
 
 use super::{Ghost, GhostSpawner, Personality, ScatterTarget, Target};

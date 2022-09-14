@@ -1,7 +1,7 @@
-use crate::ghost::ActiveGhost;
+use crate::actor::ghost::ActiveGhost;
+use crate::actor::mode::FrightenedMode;
+use crate::actor::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
 use crate::grid::{GridLocation, Speed};
-use crate::mode::FrightenedMode;
-use crate::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
 use bevy::prelude::*;
 
 pub struct PlayerPlugin;

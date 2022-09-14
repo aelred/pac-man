@@ -1,34 +1,31 @@
+mod actor;
 mod diagnostics;
 mod food;
 mod from_env;
-mod ghost;
 mod grid;
 mod layout;
 mod level;
-mod mode;
-mod movement;
-mod player;
 mod score;
 mod text;
 mod ui;
 
+use crate::actor::movement::MovementPlugin;
+use crate::actor::player::PlayerPlugin;
 use crate::diagnostics::InspectorPlugin;
 use crate::food::FoodPlugin;
 use crate::grid::GridPlugin;
 use crate::level::{LevelPlugin, HEIGHT, HEIGHT_TILES, SCALE, WIDTH, WIDTH_TILES};
-use crate::movement::MovementPlugin;
-use crate::player::PlayerPlugin;
 use crate::score::ScorePlugin;
 use crate::ui::UIPlugin;
+use actor::ghost::GhostPlugin;
+use actor::mode::ModePlugin;
 use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy::render::camera::{DepthCalculation, ScalingMode};
 use bevy::render::texture::ImageSettings;
 use from_env::FromEnv;
-use ghost::GhostPlugin;
 use layout::LayoutPlugin;
 use level::GRID_SIZE;
-use mode::ModePlugin;
 
 fn main() {
     App::new()

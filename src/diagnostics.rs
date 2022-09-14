@@ -3,14 +3,14 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspectorPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
+use crate::actor::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, SetTarget, Target};
+use crate::actor::mode::FrightenedMode;
+use crate::actor::movement::{Dir, NextDir};
+use crate::actor::player::{PlayerDeath, PlayerDied};
 use crate::food::{Eat, Food};
 use crate::from_env::{ExecutionOrderAmbiguitiesPlugin, FromEnv};
-use crate::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, SetTarget, Target};
 use crate::grid::{Grid, GridLocation};
 use crate::level::GRID;
-use crate::mode::FrightenedMode;
-use crate::movement::{Dir, NextDir};
-use crate::player::{PlayerDeath, PlayerDied};
 
 pub struct InspectorPlugin;
 

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use crate::{grid::GridLocation, player::Player};
+use crate::{actor::mode::Mode, actor::player::Player, grid::GridLocation};
 
-use super::{ActiveGhost, Ghost, Mode, Personality, Target};
+use super::{ActiveGhost, Ghost, Personality, Target};
 
 #[derive(Component, Default)]
 pub struct Clyde;

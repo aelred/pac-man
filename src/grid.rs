@@ -1,4 +1,4 @@
-use crate::movement::Dir;
+use crate::actor::movement::Dir;
 use bevy::prelude::*;
 use std::ops::Mul;
 

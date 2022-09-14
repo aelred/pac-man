@@ -1,11 +1,11 @@
-use crate::food::{Eater, Energizer, Food};
-use crate::ghost::{Blinky, Clyde, GhostSpawner, Inky, Pinky};
-use crate::grid::{Grid, GridBundle, GridLocation, Layer};
-use crate::layout::{Layout, Tile};
-use crate::movement::{
+use crate::actor::ghost::{Blinky, Clyde, GhostSpawner, Inky, Pinky};
+use crate::actor::movement::{
     moving_left, MovementBundle, NextDir, SetNextDir, StartLocation, BASE_SPEED,
 };
-use crate::player::{Player, PlayerDeath, PlayerDied};
+use crate::actor::player::{Player, PlayerDeath, PlayerDied};
+use crate::food::{Eater, Energizer, Food};
+use crate::grid::{Grid, GridBundle, GridLocation, Layer};
+use crate::layout::{Layout, Tile};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
 

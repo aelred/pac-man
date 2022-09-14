@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 
+use crate::actor::player::{Lives, UpdateLives};
 use crate::grid::{GridBundle, GridLocation, Layer};
 use crate::level::GRID;
-use crate::player::{Lives, UpdateLives};
 use crate::score::{HighScore, Score, UpdateHighScore, UpdateScore};
 use crate::text::{Align, SetTextSprites, TextBundle, TextPlugin, TextSprites};
 use crate::HEIGHT_TILES;
