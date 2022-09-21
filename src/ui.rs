@@ -74,15 +74,14 @@ fn setup_ui(mut commands: Commands) {
                     ..default()
                 })
                 .insert(Name::new("Static Text"))
-                .insert_bundle(GridBundle {
-                    grid: GRID,
-                    location: GridLocation {
+                .insert_bundle(GridBundle::new(
+                    GRID,
+                    GridLocation {
                         x: 3,
                         y: HEIGHT_TILES as isize - 1,
                     },
-                    layer: Layer::UI,
-                    ..default()
-                });
+                    Layer::UI,
+                ));
 
             builder
                 .spawn_bundle(TextBundle {
@@ -92,15 +91,14 @@ fn setup_ui(mut commands: Commands) {
                     },
                     ..default()
                 })
-                .insert_bundle(GridBundle {
-                    grid: GRID,
-                    location: GridLocation {
+                .insert_bundle(GridBundle::new(
+                    GRID,
+                    GridLocation {
                         x: 6,
                         y: HEIGHT_TILES as isize - 2,
                     },
-                    layer: Layer::UI,
-                    ..default()
-                })
+                    Layer::UI,
+                ))
                 .insert_bundle((Name::new("Score"), ScoreDisplay));
 
             builder
@@ -111,24 +109,22 @@ fn setup_ui(mut commands: Commands) {
                     },
                     ..default()
                 })
-                .insert_bundle(GridBundle {
-                    grid: GRID,
-                    location: GridLocation {
+                .insert_bundle(GridBundle::new(
+                    GRID,
+                    GridLocation {
                         x: 16,
                         y: HEIGHT_TILES as isize - 2,
                     },
-                    layer: Layer::UI,
-                    ..default()
-                })
+                    Layer::UI,
+                ))
                 .insert_bundle((Name::new("High Score"), HighScoreDisplay));
 
             builder
-                .spawn_bundle(GridBundle {
-                    grid: GRID,
-                    location: GridLocation { x: 2, y: 0 },
-                    layer: Layer::UI,
-                    ..default()
-                })
+                .spawn_bundle(GridBundle::new(
+                    GRID,
+                    GridLocation { x: 2, y: 0 },
+                    Layer::UI,
+                ))
                 .insert_bundle(SpatialBundle::default())
                 .insert_bundle((Name::new("Lives"), LivesDisplay));
         });
@@ -188,14 +184,14 @@ fn update_lives_display(
                         },
                         ..default()
                     })
-                    .insert_bundle(GridBundle {
-                        grid: GRID.center_offset() * 2.0,
-                        location: GridLocation {
+                    .insert_bundle(GridBundle::new(
+                        GRID.center_offset() * 2.0,
+                        GridLocation {
                             x: new_life as isize,
                             y: 0,
                         },
-                        ..default()
-                    })
+                        default(),
+                    ))
                     .insert(Name::new("Life"));
                 }
             }),

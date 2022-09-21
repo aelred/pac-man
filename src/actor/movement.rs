@@ -1,6 +1,8 @@
-use crate::grid::{GridLocation, GridMoving, SetGridLocation, SetGridMoving, Speed};
+use crate::grid::{
+    Grid, GridLocation, Layer, MovingTo, SetGridLocation, SetGridMoving, SetTransform, Speed,
+};
 use crate::layout::Layout;
-use crate::WIDTH_TILES;
+use crate::level::{GRID, GRID_SIZE, WIDTH};
 use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 use std::time::Duration;
@@ -13,14 +15,20 @@ impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(animate.in_ambiguity_set(Animate))
             .add_system(set_sprite_direction.in_ambiguity_set(Animate).after(SetDir))
-            .add_system(change_to_next_dir.label(SetDir).after(SetNextDir))
             .add_system(
-                move_dir
-                    .label(SetGridMoving)
-                    .after(SetDir)
-                    .after(SetGridLocation),
+                change_to_next_dir
+                    .label(SetDir)
+                    .after(SetGridLocation)
+                    .after(SetNextDir),
             )
-            .add_system(wrap_left_right.label(SetGridLocation).before(SetGridMoving));
+            .add_system(move_dir.label(SetGridMoving).after(SetDir))
+            .add_system(move_to.label(SetTransform).after(SetSpeed))
+            .add_system(
+                wrap_left_right
+                    .label(SetTransform)
+                    .before(SetGridLocation)
+                    .after(move_to),
+            );
     }
 }
 
@@ -32,6 +40,9 @@ pub struct SetDir;
 
 #[derive(SystemLabel)]
 pub struct SetNextDir;
+
+#[derive(SystemLabel)]
+pub struct SetSpeed;
 
 #[derive(Bundle, Default)]
 pub struct MovementBundle {
@@ -66,10 +77,10 @@ pub fn moving_left(location: GridLocation) -> impl Bundle {
     (
         location,
         Dir::Left,
-        GridMoving {
-            destination: location.shift(Dir::Left),
-            progress: 0.5,
-        },
+        MovingTo(
+            GRID.to_vec2(location.shift(Dir::Left))
+                .extend(Layer::FOREGROUND.0),
+        ),
         StartLocation(location),
     )
 }
@@ -77,26 +88,25 @@ pub fn moving_left(location: GridLocation) -> impl Bundle {
 fn move_dir(
     mut commands: Commands,
     layout: Res<Layout>,
-    query: Query<(Entity, &GridLocation, &Dir), Without<GridMoving>>,
+    query: Query<(Entity, &GridLocation, &Grid, &Layer, &Dir), Without<MovingTo>>,
 ) {
-    for (entity, location, dir) in &query {
+    for (entity, location, grid, layer, dir) in &query {
         let new_loc = location.shift(*dir);
         if !layout.collides(&new_loc) {
-            commands.entity(entity).insert(GridMoving {
-                destination: new_loc,
-                ..default()
-            });
+            commands
+                .entity(entity)
+                .insert(MovingTo(grid.to_vec2(new_loc).extend(layer.0)));
         }
     }
 }
 
 fn change_to_next_dir(
     layout: Res<Layout>,
-    mut query: Query<(&GridLocation, &NextDir, &mut Dir), Without<GridMoving>>,
+    mut query: Query<(&GridLocation, &NextDir, &mut Dir), Without<MovingTo>>,
 ) {
     for (location, next, mut dir) in &mut query {
         if let Some(next) = next.0 {
-            if !layout.collides(&location.shift(next)) {
+            if !layout.collides(&location.shift(next)) && *dir != next {
                 *dir = next;
             }
         }
@@ -105,7 +115,7 @@ fn change_to_next_dir(
 
 fn animate(
     time: Res<Time>,
-    mut query: Query<(&mut TextureAtlasSprite, &mut AnimationTimer), With<GridMoving>>,
+    mut query: Query<(&mut TextureAtlasSprite, &mut AnimationTimer), With<MovingTo>>,
 ) {
     for (mut sprite, mut timer) in &mut query {
         timer.tick(time.delta());
@@ -129,14 +139,38 @@ fn set_sprite_direction(mut query: Query<(&Dir, &mut TextureAtlasSprite), Change
     }
 }
 
-fn wrap_left_right(mut query: Query<&mut GridLocation>) {
-    const MARGIN: isize = 2;
+fn move_to(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &Speed, &mut Transform, &MovingTo)>,
+) {
+    for (entity, speed, mut transform, moving) in query.iter_mut() {
+        let destination = moving.0;
+        let direction = destination - transform.translation;
+        let distance = direction.length();
 
-    for mut location in &mut query {
-        let new_x = (location.x + MARGIN).rem_euclid(WIDTH_TILES as isize + MARGIN * 2) - MARGIN;
+        let movement = **speed * time.delta_seconds();
+
+        if distance < movement {
+            transform.translation = destination;
+            commands.entity(entity).remove::<MovingTo>();
+        } else {
+            transform.translation += direction.normalize() * movement;
+        }
+    }
+}
+
+fn wrap_left_right(mut query: Query<(&mut Transform, Option<&mut MovingTo>)>) {
+    const MARGIN: f32 = 2.0 * GRID_SIZE;
+
+    for (mut transform, moving_to) in &mut query {
+        let new_x = (transform.translation.x + MARGIN).rem_euclid(WIDTH + MARGIN * 2.0) - MARGIN;
         // Check so we don't trigger change detection
-        if location.x != new_x {
-            location.x = new_x;
+        if (transform.translation.x - new_x).abs() > MARGIN {
+            if let Some(mut moving_to) = moving_to {
+                moving_to.x += new_x - transform.translation.x;
+            }
+            transform.translation.x = new_x;
         }
     }
 }

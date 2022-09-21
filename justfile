@@ -1,5 +1,5 @@
 export RUST_BACKTRACE := "1"
-export RUST_LOG := "warn,pac_man=debug"
+export RUST_LOG := "info,wgpu=error,pac_man=debug"
 
 # Build and run the game
 run:

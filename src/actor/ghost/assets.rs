@@ -2,7 +2,7 @@ use bevy::{prelude::*, sprite::Rect};
 
 use crate::{
     actor::movement::{moving_left, MovementBundle, NextDir, BASE_SPEED},
-    grid::GridLocation,
+    grid::{GridBundle, GridLocation},
     level::{GridEntity, GRID},
 };
 
@@ -19,8 +19,7 @@ impl GhostSpawner {
         bldr.spawn_bundle(GridEntity {
             name: Name::new(P::NAME),
             texture_atlas: self.get_atlas(&ghost),
-            grid: GRID,
-            location,
+            grid: GridBundle::new(GRID, location, default()),
             ..default()
         })
         .insert_bundle(moving_left(location))

@@ -105,21 +105,20 @@ fn setup_background(
             texture_atlas: background_handle,
             ..default()
         })
-        .insert_bundle(GridBundle {
-            grid: Grid {
+        .insert_bundle(GridBundle::new(
+            Grid {
                 size: Vec2::splat(GRID_SIZE),
                 offset: Vec2::new(
                     (WIDTH - GRID_SIZE) / 2.0,
                     (BACKGROUND_HEIGHT - GRID_SIZE) / 2.0,
                 ),
             },
-            location: GridLocation {
+            GridLocation {
                 x: 0,
                 y: BOTTOM_MARGIN as isize,
             },
-            layer: Layer::BACKGROUND,
-            ..default()
-        })
+            Layer::BACKGROUND,
+        ))
         .insert(Name::new("Background"));
 }
 
@@ -190,11 +189,10 @@ pub struct GridEntity {
     pub name: Name,
     pub sprite: TextureAtlasSprite,
     pub texture_atlas: Handle<TextureAtlas>,
-    pub grid: Grid,
-    pub location: GridLocation,
-    pub layer: Layer,
     #[bundle]
-    pub _spatial: SpatialBundle,
+    pub grid: GridBundle,
+    #[bundle]
+    pub _visiblity: VisibilityBundle,
 }
 
 fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_assets: &LevelAssets) {
@@ -202,8 +200,7 @@ fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_asse
         .spawn_bundle(GridEntity {
             name: Name::new("Pac-Man"),
             texture_atlas: level_assets.pac_man.clone(),
-            grid: GRID,
-            location,
+            grid: GridBundle::new(GRID, location, default()),
             ..default()
         })
         .insert_bundle(MovementBundle {
@@ -228,9 +225,7 @@ fn spawn_food(
             name: Name::new(name),
             sprite: TextureAtlasSprite::new(sprite_index),
             texture_atlas: level_assets.objects.clone(),
-            grid: GRID,
-            location,
-            layer: Layer(4.0),
+            grid: GridBundle::new(GRID, location, Layer(4.0)),
             ..default()
         })
         .insert(Food { points })

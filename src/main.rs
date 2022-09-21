@@ -14,7 +14,7 @@ use crate::actor::player::PlayerPlugin;
 use crate::diagnostics::InspectorPlugin;
 use crate::food::FoodPlugin;
 use crate::grid::GridPlugin;
-use crate::level::{LevelPlugin, HEIGHT, HEIGHT_TILES, SCALE, WIDTH, WIDTH_TILES};
+use crate::level::{LevelPlugin, HEIGHT, HEIGHT_TILES, SCALE, WIDTH};
 use crate::score::ScorePlugin;
 use crate::ui::UIPlugin;
 use actor::ghost::GhostPlugin;

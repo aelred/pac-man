@@ -9,7 +9,7 @@ use rand::seq::SliceRandom;
 
 use crate::{
     actor::mode::{FrightenedMode, Mode, SetMode, TickMode},
-    actor::movement::{Dir, NextDir, SetDir, StartLocation, BASE_SPEED},
+    actor::movement::{Dir, NextDir, StartLocation, BASE_SPEED},
     food::{Eat, Food},
     grid::{GridLocation, SetGridLocation},
     layout::Layout,
@@ -20,16 +20,17 @@ pub use clyde::Clyde;
 pub use inky::Inky;
 pub use pinky::Pinky;
 
+use super::{movement::SetNextDir, player::Player};
+
 pub struct GhostPlugin;
 
 impl Plugin for GhostPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GhostSpawner>()
-            // Don't label these SetNextDir, because they never takes effect this frame
             .add_system_set(
                 SystemSet::new()
+                    .label(SetNextDir)
                     .after(TickMode)
-                    .after(SetDir)
                     .before(SetGridLocation)
                     .with_system(choose_next_dir)
                     .with_system(frightened),
@@ -132,7 +133,10 @@ const DIRECTIONS: [Dir; 4] = [Dir::Up, Dir::Left, Dir::Down, Dir::Right];
 // Ghosts decide on their next direction one grid location BEFORE
 fn choose_next_dir(
     layout: Res<Layout>,
-    mut query: Query<(&Dir, &mut NextDir, &GridLocation, &Target), Changed<GridLocation>>,
+    mut query: Query<
+        (&Dir, &mut NextDir, &GridLocation, &Target),
+        (Changed<GridLocation>, Without<Player>),
+    >,
 ) {
     for (dir, mut next_dir, loc, target) in &mut query {
         let next_loc = loc.shift(*dir);

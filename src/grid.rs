@@ -1,5 +1,6 @@
 use crate::actor::movement::Dir;
 use bevy::prelude::*;
+use bevy_inspector_egui::Inspectable;
 use std::ops::Mul;
 
 pub struct GridPlugin;
@@ -7,21 +8,15 @@ pub struct GridPlugin;
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(
-            update_transform_from_grid_location
-                .in_ambiguity_set(UpdateTransform)
-                .after(SetGridLocation),
-        )
-        .add_system(
-            update_transform_from_grid_moving
-                .in_ambiguity_set(UpdateTransform)
-                .after(SetGridMoving),
-        )
-        .add_system(move_on_grid.label(SetGridLocation).label(SetGridMoving));
+            update_grid_location_from_transform
+                .after(SetTransform)
+                .label(SetGridLocation),
+        );
     }
 }
 
-#[derive(AmbiguitySetLabel)]
-struct UpdateTransform;
+#[derive(SystemLabel)]
+pub struct SetTransform;
 
 #[derive(SystemLabel)]
 pub struct SetGridLocation;
@@ -29,7 +24,7 @@ pub struct SetGridLocation;
 #[derive(SystemLabel)]
 pub struct SetGridMoving;
 
-#[derive(Component)]
+#[derive(Component, Copy, Clone)]
 pub struct Layer(pub f32);
 
 impl Layer {
@@ -46,14 +41,31 @@ impl Default for Layer {
 
 #[derive(Bundle, Default)]
 pub struct GridBundle {
-    pub grid: Grid,
-    pub location: GridLocation,
-    pub layer: Layer,
+    grid: Grid,
+    location: GridLocation,
+    layer: Layer,
     #[bundle]
-    pub _transform: TransformBundle,
+    transform: TransformBundle,
 }
 
-#[derive(Component)]
+impl GridBundle {
+    pub fn new(grid: Grid, location: GridLocation, layer: Layer) -> Self {
+        Self {
+            grid,
+            location,
+            layer,
+            transform: TransformBundle {
+                local: Transform {
+                    translation: grid.to_vec2(location).extend(layer.0),
+                    ..default()
+                },
+                ..default()
+            },
+        }
+    }
+}
+
+#[derive(Component, Copy, Clone)]
 pub struct Grid {
     pub size: Vec2,
     pub offset: Vec2,
@@ -62,6 +74,14 @@ pub struct Grid {
 impl Grid {
     pub fn to_vec2(&self, location: GridLocation) -> Vec2 {
         self.offset + self.size * location.to_unscaled_vec2()
+    }
+
+    pub fn to_grid_location(&self, vec: Vec2) -> GridLocation {
+        let scaled = (vec - self.offset) / self.size;
+        GridLocation {
+            x: scaled.x.round() as isize,
+            y: scaled.y.round() as isize,
+        }
     }
 
     pub fn center_offset(&self) -> Grid {
@@ -92,7 +112,7 @@ impl Mul<f32> for Grid {
     }
 }
 
-#[derive(Component, Debug, Copy, Clone, Default, Eq, PartialEq)]
+#[derive(Component, Debug, Copy, Clone, Default, Eq, PartialEq, Inspectable)]
 pub struct GridLocation {
     pub x: isize,
     pub y: isize,
@@ -121,12 +141,9 @@ impl GridLocation {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Deref, DerefMut)]
 #[component(storage = "SparseSet")]
-pub struct GridMoving {
-    pub destination: GridLocation,
-    pub progress: f32,
-}
+pub struct MovingTo(pub Vec3);
 
 // Speed in pixels per second
 #[derive(Component, Default, Deref)]
@@ -140,47 +157,13 @@ impl Mul<f32> for Speed {
     }
 }
 
-fn update_transform_from_grid_location(
-    mut query: Query<(&Grid, &GridLocation, &Layer, &mut Transform), Without<GridMoving>>,
+fn update_grid_location_from_transform(
+    mut query: Query<(&Grid, &Transform, &mut GridLocation), Without<MovingTo>>,
 ) {
-    for (grid, location, layer, mut transform) in query.iter_mut() {
-        set_transform_from_unscaled_grid(&mut transform, grid, layer, location.to_unscaled_vec2());
-    }
-}
-
-fn update_transform_from_grid_moving(
-    mut query: Query<(&Grid, &GridLocation, &GridMoving, &Layer, &mut Transform)>,
-) {
-    for (grid, location, moving, layer, mut transform) in query.iter_mut() {
-        let unscaled = location.to_unscaled_vec2() * (1.0 - moving.progress)
-            + moving.destination.to_unscaled_vec2() * moving.progress;
-        set_transform_from_unscaled_grid(&mut transform, grid, layer, unscaled);
-    }
-}
-
-fn set_transform_from_unscaled_grid(
-    transform: &mut Transform,
-    grid: &Grid,
-    layer: &Layer,
-    vec: Vec2,
-) {
-    transform.translation = (grid.offset + grid.size * vec).extend(layer.0);
-}
-
-fn move_on_grid(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut query: Query<(Entity, &Grid, &Speed, &mut GridLocation, &mut GridMoving)>,
-) {
-    for (entity, grid, speed, mut location, mut moving) in query.iter_mut() {
-        // TODO: maybe this should be reworked to have movement happen outside of the grid
-        let distance = (grid.to_vec2(moving.destination) - grid.to_vec2(*location)).length();
-
-        moving.progress += **speed * time.delta_seconds() / distance;
-
-        if moving.progress >= 1.0 {
-            *location = moving.destination;
-            commands.entity(entity).remove::<GridMoving>();
+    for (grid, transform, mut location) in query.iter_mut() {
+        let new_location = grid.to_grid_location(transform.translation.truncate());
+        if *location != new_location {
+            *location = new_location;
         }
     }
 }

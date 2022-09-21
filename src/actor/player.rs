@@ -4,6 +4,8 @@ use crate::actor::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
 use crate::grid::{GridLocation, Speed};
 use bevy::prelude::*;
 
+use super::movement::SetSpeed;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -17,7 +19,7 @@ impl Plugin for PlayerPlugin {
                     .in_ambiguity_set(PlayerDeath),
             )
             .add_system(lose_life_when_dying.label(UpdateLives).after(PlayerDeath))
-            .add_system(set_speed);
+            .add_system(set_speed.label(SetSpeed));
     }
 }
 

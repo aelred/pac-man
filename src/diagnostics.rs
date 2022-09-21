@@ -5,7 +5,7 @@ use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
 use crate::actor::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, SetTarget, Target};
 use crate::actor::mode::FrightenedMode;
-use crate::actor::movement::{Dir, NextDir};
+use crate::actor::movement::{Dir, NextDir, SetDir, SetNextDir};
 use crate::actor::player::{PlayerDeath, PlayerDied};
 use crate::food::{Eat, Food};
 use crate::from_env::{ExecutionOrderAmbiguitiesPlugin, FromEnv};
@@ -27,20 +27,26 @@ impl Plugin for InspectorPlugin {
                 ..default()
             })
             .add_system(toggle_debug_mode)
-            .add_system(toggle_inspector.after(toggle_debug_mode))
+            .add_system_set(
+                SystemSet::new()
+                    .after(toggle_debug_mode)
+                    .in_ambiguity_set("debug_mode_so_who_cares")
+                    .with_system(toggle_inspector)
+                    .with_system(trigger_eat_ghost)
+                    .with_system(draw_grid)
+                    .with_system(draw_dir.after(SetDir))
+                    .with_system(draw_next_dir.after(SetNextDir))
+                    .with_system(draw_target.after(SetTarget).after(draw_grid)),
+            )
             .add_system(
                 trigger_death
                     .label(PlayerDeath)
                     .in_ambiguity_set(PlayerDeath),
             )
             .add_system(trigger_frightened)
-            .add_system(trigger_eat_ghost)
-            .add_system(draw_grid.after(toggle_debug_mode))
-            .add_system(draw_target.after(SetTarget).after(draw_grid))
-            .add_system(draw_dir)
-            .add_system(draw_next_dir)
             .register_inspectable::<NextDir>()
-            .register_inspectable::<Dir>();
+            .register_inspectable::<Dir>()
+            .register_inspectable::<GridLocation>();
     }
 }
 
