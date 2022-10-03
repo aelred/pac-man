@@ -10,7 +10,7 @@ use rand::seq::SliceRandom;
 use crate::{
     actor::mode::{FrightenedMode, Mode, SetMode, TickMode},
     actor::movement::{Dir, NextDir, StartLocation, BASE_SPEED},
-    food::{Eat, Food},
+    food::{Eat, Food, WriteEatEvent},
     grid::{GridLocation, SetGridLocation},
     layout::Layout,
 };
@@ -20,7 +20,10 @@ pub use clyde::Clyde;
 pub use inky::Inky;
 pub use pinky::Pinky;
 
-use super::{movement::SetNextDir, player::Player};
+use super::{
+    movement::{MovementAmbiguity, SetDir, SetNextDir},
+    player::Player,
+};
 
 pub struct GhostPlugin;
 
@@ -30,35 +33,37 @@ impl Plugin for GhostPlugin {
             .add_system_set(
                 SystemSet::new()
                     .label(SetNextDir)
+                    .in_ambiguity_set(MovementAmbiguity)
                     .after(TickMode)
                     .before(SetGridLocation)
                     .with_system(choose_next_dir)
                     .with_system(frightened),
             )
             .add_system_set(
-                // These systems are actually mutually exclusive - they operate on diff ghosts, or in diff modes
                 SystemSet::new()
                     .label(SetTarget)
-                    .in_ambiguity_set(GhostModes)
+                    .in_ambiguity_set(MovementAmbiguity)
                     .after(SetMode)
+                    .after(SetGridLocation)
                     .with_system(blinky::chase)
-                    .with_system(pinky::chase)
-                    .with_system(inky::chase)
+                    .with_system(pinky::chase.after(SetDir))
+                    .with_system(inky::chase.after(SetDir))
                     .with_system(clyde::chase)
-                    .with_system(scatter.after(SetMode)),
+                    .with_system(scatter),
             )
             .add_system(become_frightened.after(SetMode))
             .add_system(stop_frightened.after(SetMode))
-            .add_system(start_respawning_eaten_ghost.after(SetTarget))
+            .add_system(
+                start_respawning_eaten_ghost
+                    .after(WriteEatEvent)
+                    .after(SetTarget),
+            )
             .add_system(finish_respawning_eaten_ghost.after(SetTarget));
     }
 }
 
 #[derive(SystemLabel)]
 pub struct SetTarget;
-
-#[derive(AmbiguitySetLabel)]
-struct GhostModes;
 
 pub struct GhostSpawner {
     blinky: Handle<TextureAtlas>,
@@ -135,7 +140,7 @@ fn choose_next_dir(
     layout: Res<Layout>,
     mut query: Query<
         (&Dir, &mut NextDir, &GridLocation, &Target),
-        (Changed<GridLocation>, Without<Player>),
+        (Changed<GridLocation>, Without<Player>, Without<Frightened>),
     >,
 ) {
     for (dir, mut next_dir, loc, target) in &mut query {
@@ -217,7 +222,7 @@ fn frightened(
     layout: Res<Layout>,
     mut query: Query<
         (&Dir, &mut NextDir, &GridLocation),
-        (With<Frightened>, Changed<GridLocation>),
+        (With<Frightened>, Changed<GridLocation>, Without<Player>),
     >,
 ) {
     for (dir, mut next_dir, loc) in &mut query {
@@ -251,10 +256,10 @@ fn start_respawning_eaten_ghost(
     layout: Res<Layout>,
     assets: Res<GhostSpawner>,
     mut eat_events: EventReader<Eat>,
-    mut ghosts: Query<(&GridLocation, &StartLocation), With<Ghost>>,
+    ghosts: Query<(&GridLocation, &StartLocation), With<Ghost>>,
 ) {
     for Eat(eaten) in eat_events.iter() {
-        if let Ok((location, start)) = ghosts.get_mut(*eaten) {
+        if let Ok((location, start)) = ghosts.get(*eaten) {
             let target = Target(**start);
 
             commands

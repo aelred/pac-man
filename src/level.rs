@@ -3,7 +3,7 @@ use crate::actor::movement::{
     moving_left, MovementBundle, NextDir, SetNextDir, StartLocation, BASE_SPEED,
 };
 use crate::actor::player::{Player, PlayerDeath, PlayerDied};
-use crate::food::{Eater, Energizer, Food};
+use crate::food::{Energizer, Food};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer};
 use crate::layout::{Layout, Tile};
 use bevy::prelude::*;
@@ -37,9 +37,6 @@ impl Plugin for LevelPlugin {
             );
     }
 }
-
-#[derive(Component)]
-struct Level;
 
 struct LevelAssets {
     pac_man: Handle<TextureAtlas>,
@@ -130,7 +127,7 @@ fn create_level(
 ) {
     commands
         .spawn_bundle(SpatialBundle::default())
-        .insert_bundle((Name::new("Level"), Level))
+        .insert(Name::new("Level"))
         .with_children(|bldr| spawn_level_entities(bldr, &layout, &level_assets, &ghosts));
 }
 
@@ -208,7 +205,7 @@ fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_asse
             ..default()
         })
         .insert_bundle(moving_left(location))
-        .insert_bundle((NextDir::default(), Player, Eater));
+        .insert_bundle((NextDir::default(), Player));
 }
 
 fn spawn_food(

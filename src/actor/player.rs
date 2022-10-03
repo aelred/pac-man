@@ -1,10 +1,11 @@
 use crate::actor::ghost::ActiveGhost;
 use crate::actor::mode::FrightenedMode;
 use crate::actor::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
-use crate::grid::{GridLocation, Speed};
+use crate::grid::{GridLocation, SetGridLocation, Speed};
 use bevy::prelude::*;
 
-use super::movement::SetSpeed;
+use super::mode::SetMode;
+use super::movement::{MovementAmbiguity, SetSpeed};
 
 pub struct PlayerPlugin;
 
@@ -12,14 +13,20 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Lives>()
             .add_event::<PlayerDied>()
-            .add_system(player_controls.label(SetNextDir).before(PlayerDeath))
+            .add_system(
+                player_controls
+                    .label(SetNextDir)
+                    .in_ambiguity_set(MovementAmbiguity)
+                    .before(PlayerDeath),
+            )
             .add_system(
                 die_when_touching_ghost
                     .label(PlayerDeath)
+                    .after(SetGridLocation)
                     .in_ambiguity_set(PlayerDeath),
             )
             .add_system(lose_life_when_dying.label(UpdateLives).after(PlayerDeath))
-            .add_system(set_speed.label(SetSpeed));
+            .add_system(set_speed.label(SetSpeed).after(SetMode));
     }
 }
 

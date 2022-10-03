@@ -44,6 +44,11 @@ pub struct SetNextDir;
 #[derive(SystemLabel)]
 pub struct SetSpeed;
 
+/// Lots of systems set direction, target, etc. but they can run together because they
+/// operate in different circumstances (e.g. player, ghost state, ghost type)
+#[derive(AmbiguitySetLabel)]
+pub struct MovementAmbiguity;
+
 #[derive(Bundle, Default)]
 pub struct MovementBundle {
     pub animation_timer: AnimationTimer,

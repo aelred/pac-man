@@ -1,6 +1,7 @@
 use crate::actor::ghost::Ghost;
 use crate::actor::mode::{FrightenedMode, SetMode, TickMode};
-use crate::grid::{GridLocation, SetGridLocation};
+use crate::actor::player::Player;
+use crate::grid::GridLocation;
 use crate::score::{Score, UpdateScore};
 use bevy::prelude::*;
 
@@ -9,20 +10,26 @@ pub struct FoodPlugin;
 impl Plugin for FoodPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Eat>()
-            .add_system(eat.after(SetGridLocation))
-            .add_system(add_score.after(eat).label(UpdateScore))
-            .add_system(eat_energizer.label(SetMode).after(eat).after(TickMode))
-            .add_system(destroy.after(eat));
+            // To prevent cycles, eating happens the frame after pac-man moves there
+            .add_system(eat.label(WriteEatEvent).in_ambiguity_set(WriteEatEvent))
+            .add_system(add_score.after(WriteEatEvent).label(UpdateScore))
+            .add_system(
+                eat_energizer
+                    .label(SetMode)
+                    .after(WriteEatEvent)
+                    .after(TickMode),
+            )
+            .add_system(destroy.after(WriteEatEvent));
     }
 }
+
+#[derive(SystemLabel, AmbiguitySetLabel)]
+pub struct WriteEatEvent;
 
 #[derive(Component, Default)]
 pub struct Food {
     pub points: u32,
 }
-
-#[derive(Component)]
-pub struct Eater;
 
 #[derive(Component)]
 pub struct Energizer;
@@ -31,12 +38,12 @@ pub struct Eat(pub Entity);
 
 fn eat(
     foods: Query<(Entity, &GridLocation), With<Food>>,
-    eater: Query<&GridLocation, With<Eater>>,
+    player: Query<&GridLocation, With<Player>>,
     mut eat_events: EventWriter<Eat>,
 ) {
-    for eater_location in &eater {
+    for player_location in &player {
         for (food_entity, food_location) in &foods {
-            if eater_location == food_location {
+            if player_location == food_location {
                 eat_events.send(Eat(food_entity));
             }
         }

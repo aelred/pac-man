@@ -4,12 +4,12 @@ use bevy_inspector_egui::{RegisterInspectable, WorldInspectorParams, WorldInspec
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
 use crate::actor::ghost::{Blinky, Clyde, Ghost, Inky, Pinky, SetTarget, Target};
-use crate::actor::mode::FrightenedMode;
+use crate::actor::mode::{FrightenedMode, SetMode};
 use crate::actor::movement::{Dir, NextDir, SetDir, SetNextDir};
 use crate::actor::player::{PlayerDeath, PlayerDied};
-use crate::food::{Eat, Food};
+use crate::food::{Eat, Food, WriteEatEvent};
 use crate::from_env::{ExecutionOrderAmbiguitiesPlugin, FromEnv};
-use crate::grid::{Grid, GridLocation};
+use crate::grid::{Grid, GridLocation, SetGridLocation};
 use crate::level::GRID;
 
 pub struct InspectorPlugin;
@@ -32,10 +32,19 @@ impl Plugin for InspectorPlugin {
                     .after(toggle_debug_mode)
                     .in_ambiguity_set("debug_mode_so_who_cares")
                     .with_system(toggle_inspector)
-                    .with_system(trigger_eat_ghost)
+                    .with_system(
+                        trigger_eat_ghost
+                            .label(WriteEatEvent)
+                            .in_ambiguity_set(WriteEatEvent),
+                    )
                     .with_system(draw_grid)
                     .with_system(draw_dir.after(SetDir))
-                    .with_system(draw_next_dir.after(SetNextDir))
+                    .with_system(
+                        draw_next_dir
+                            .after(SetGridLocation)
+                            .after(SetDir)
+                            .after(SetNextDir),
+                    )
                     .with_system(draw_target.after(SetTarget).after(draw_grid)),
             )
             .add_system(
@@ -43,7 +52,7 @@ impl Plugin for InspectorPlugin {
                     .label(PlayerDeath)
                     .in_ambiguity_set(PlayerDeath),
             )
-            .add_system(trigger_frightened)
+            .add_system(trigger_frightened.before(SetMode))
             .register_inspectable::<NextDir>()
             .register_inspectable::<Dir>()
             .register_inspectable::<GridLocation>();
