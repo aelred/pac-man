@@ -20,10 +20,7 @@ pub use clyde::Clyde;
 pub use inky::Inky;
 pub use pinky::Pinky;
 
-use super::{
-    movement::{MovementAmbiguity, SetDir, SetNextDir},
-    player::Player,
-};
+use super::movement::{MovementAmbiguity, SetDir, SetNextDir};
 
 pub struct GhostPlugin;
 
@@ -140,7 +137,7 @@ fn choose_next_dir(
     layout: Res<Layout>,
     mut query: Query<
         (&Dir, &mut NextDir, &GridLocation, &Target),
-        (Changed<GridLocation>, Without<Player>, Without<Frightened>),
+        (Changed<GridLocation>, Without<Frightened>),
     >,
 ) {
     for (dir, mut next_dir, loc, target) in &mut query {
@@ -222,7 +219,7 @@ fn frightened(
     layout: Res<Layout>,
     mut query: Query<
         (&Dir, &mut NextDir, &GridLocation),
-        (With<Frightened>, Changed<GridLocation>, Without<Player>),
+        (With<Frightened>, Changed<GridLocation>),
     >,
 ) {
     for (dir, mut next_dir, loc) in &mut query {

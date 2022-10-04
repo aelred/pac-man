@@ -72,11 +72,11 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn to_vec2(&self, location: GridLocation) -> Vec2 {
+    pub fn to_vec2(self, location: GridLocation) -> Vec2 {
         self.offset + self.size * location.to_unscaled_vec2()
     }
 
-    pub fn to_grid_location(&self, vec: Vec2) -> GridLocation {
+    pub fn to_grid_location(self, vec: Vec2) -> GridLocation {
         let scaled = (vec - self.offset) / self.size;
         GridLocation {
             x: scaled.x.round() as isize,
