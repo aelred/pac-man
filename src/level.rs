@@ -1,10 +1,8 @@
 use crate::actor::ghost::{Blinky, Clyde, GhostSpawner, Inky, Pinky};
-use crate::actor::movement::{
-    moving_left, MovementBundle, NextDir, SetNextDir, StartLocation, BASE_SPEED,
-};
+use crate::actor::movement::{moving_left, MovementBundle, NextDir, StartLocation, BASE_SPEED};
 use crate::actor::player::{Player, PlayerDeath, PlayerDied};
 use crate::food::{Energizer, Food};
-use crate::grid::{Grid, GridBundle, GridLocation, Layer};
+use crate::grid::{Grid, GridBundle, GridLocation, Layer, SetGridMoving};
 use crate::layout::{Layout, Tile};
 use bevy::prelude::*;
 use bevy::sprite::Rect;
@@ -32,8 +30,8 @@ impl Plugin for LevelPlugin {
             .add_startup_system(create_level)
             .add_system(
                 reset_level_when_player_dies
-                    .label(SetNextDir)
-                    .after(PlayerDeath),
+                    .after(PlayerDeath)
+                    .after(SetGridMoving),
             );
     }
 }
@@ -135,17 +133,12 @@ fn reset_level_when_player_dies(
     mut commands: Commands,
     mut died_events: EventReader<PlayerDied>,
     query: Query<(Entity, &StartLocation)>,
-    mut player: Query<&mut NextDir, With<Player>>,
 ) {
     for _ in died_events.iter() {
         for (entity, start_location) in &query {
             commands
                 .entity(entity)
                 .insert_bundle(moving_left(**start_location));
-        }
-
-        for mut player in &mut player {
-            **player = None;
         }
     }
 }

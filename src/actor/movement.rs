@@ -81,7 +81,9 @@ pub struct StartLocation(GridLocation);
 pub fn moving_left(location: GridLocation) -> impl Bundle {
     (
         location,
+        Transform::from_translation(GRID.to_vec2(location).extend(Layer::FOREGROUND.0)),
         Dir::Left,
+        NextDir(None),
         MovingTo(
             GRID.to_vec2(location.shift(Dir::Left))
                 .extend(Layer::FOREGROUND.0),
