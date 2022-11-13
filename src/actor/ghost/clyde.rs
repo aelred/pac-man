@@ -2,16 +2,16 @@ use bevy::prelude::*;
 
 use crate::{actor::mode::Mode, actor::player::Player, grid::GridLocation};
 
-use super::{ActiveGhost, Ghost, Personality, Target};
+use super::{ActiveGhost, Personality, PersonalityT, Target};
 
 #[derive(Component, Default)]
 pub struct Clyde;
 
-impl Personality for Clyde {
+impl PersonalityT for Clyde {
     const NAME: &'static str = "Clyde";
     const COLOR: Color = Color::rgb(1.0, 0.72, 0.32);
     const SCATTER: GridLocation = GridLocation { x: 0, y: 0 };
-    const GHOST: Ghost = Ghost::Clyde;
+    const VALUE: Personality = Personality::Clyde;
 }
 
 pub fn chase(

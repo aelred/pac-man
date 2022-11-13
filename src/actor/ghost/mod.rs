@@ -1,6 +1,7 @@
 mod assets;
 mod blinky;
 mod clyde;
+mod house;
 mod inky;
 mod pinky;
 
@@ -19,6 +20,8 @@ pub use blinky::Blinky;
 pub use clyde::Clyde;
 pub use inky::Inky;
 pub use pinky::Pinky;
+
+use self::house::InHouse;
 
 use super::movement::{MovementAmbiguity, SetDir, SetNextDir};
 
@@ -72,26 +75,35 @@ pub struct GhostSpawner {
 }
 
 impl GhostSpawner {
-    fn get_atlas(&self, ghost: &Ghost) -> Handle<TextureAtlas> {
+    fn get_atlas(&self, ghost: Personality) -> Handle<TextureAtlas> {
         match ghost {
-            Ghost::Blinky => &self.blinky,
-            Ghost::Pinky => &self.pinky,
-            Ghost::Inky => &self.inky,
-            Ghost::Clyde => &self.clyde,
+            Personality::Blinky => &self.blinky,
+            Personality::Pinky => &self.pinky,
+            Personality::Inky => &self.inky,
+            Personality::Clyde => &self.clyde,
         }
         .clone()
     }
 }
 
-pub trait Personality: Component + Default {
-    const NAME: &'static str;
-    const COLOR: Color;
-    const SCATTER: GridLocation;
-    const GHOST: Ghost;
+#[derive(Component, Default)]
+pub struct Ghost {
+    pub personality: Personality,
 }
 
-#[derive(Component, Default)]
-pub enum Ghost {
+impl Ghost {
+    pub fn color(&self) -> Color {
+        match self.personality {
+            Personality::Blinky => Blinky::COLOR,
+            Personality::Pinky => Pinky::COLOR,
+            Personality::Inky => Inky::COLOR,
+            Personality::Clyde => Clyde::COLOR,
+        }
+    }
+}
+
+#[derive(Default, Copy, Clone)]
+pub enum Personality {
     #[default]
     Blinky,
     Pinky,
@@ -99,15 +111,11 @@ pub enum Ghost {
     Clyde,
 }
 
-impl Ghost {
-    pub fn color(&self) -> Color {
-        match self {
-            Ghost::Blinky => Blinky::COLOR,
-            Ghost::Pinky => Pinky::COLOR,
-            Ghost::Inky => Inky::COLOR,
-            Ghost::Clyde => Clyde::COLOR,
-        }
-    }
+pub trait PersonalityT: Component + Default {
+    const NAME: &'static str;
+    const COLOR: Color;
+    const SCATTER: GridLocation;
+    const VALUE: Personality;
 }
 
 #[derive(Component, Default, Deref, DerefMut, Copy, Clone)]
@@ -128,7 +136,12 @@ struct FrightenedBundle {
     food: Food,
 }
 
-pub type ActiveGhost = (With<Ghost>, Without<Respawning>, Without<Frightened>);
+pub type ActiveGhost = (
+    With<Ghost>,
+    Without<Respawning>,
+    Without<Frightened>,
+    Without<InHouse>,
+);
 
 const DIRECTIONS: [Dir; 4] = [Dir::Up, Dir::Left, Dir::Down, Dir::Right];
 
@@ -210,7 +223,7 @@ fn stop_frightened(
             .entity(entity)
             .remove_bundle::<FrightenedBundle>()
             .insert(BASE_SPEED * 0.75)
-            .insert(assets.get_atlas(ghost))
+            .insert(assets.get_atlas(ghost.personality))
             .insert(Target::default());
     }
 }
@@ -288,7 +301,7 @@ fn finish_respawning_eaten_ghost(
             commands
                 .entity(entity)
                 .insert(BASE_SPEED * 0.75)
-                .insert(assets.get_atlas(ghost))
+                .insert(assets.get_atlas(ghost.personality))
                 .remove::<Respawning>();
         }
     }

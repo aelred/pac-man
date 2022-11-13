@@ -7,19 +7,19 @@ use crate::{
     level::{HEIGHT_TILES, WIDTH_TILES},
 };
 
-use super::{ActiveGhost, Ghost, Personality, Target};
+use super::{ActiveGhost, Personality, PersonalityT, Target};
 
 #[derive(Component, Default)]
 pub struct Blinky;
 
-impl Personality for Blinky {
+impl PersonalityT for Blinky {
     const NAME: &'static str = "Blinky";
     const COLOR: Color = Color::RED;
     const SCATTER: GridLocation = GridLocation {
         x: WIDTH_TILES as isize - 3,
         y: HEIGHT_TILES as isize - 1,
     };
-    const GHOST: Ghost = Ghost::Blinky;
+    const VALUE: Personality = Personality::Blinky;
 }
 
 pub fn chase(

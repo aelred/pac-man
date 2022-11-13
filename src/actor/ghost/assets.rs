@@ -6,26 +6,28 @@ use crate::{
     level::{GridEntity, GRID},
 };
 
-use super::{Ghost, GhostSpawner, Personality, ScatterTarget, Target};
+use super::{Ghost, GhostSpawner, PersonalityT, ScatterTarget, Target};
 
 impl GhostSpawner {
-    pub fn spawn<P: Personality>(
+    pub fn spawn<P: PersonalityT>(
         &self,
         bldr: &mut ChildBuilder,
         personality: P,
         location: GridLocation,
     ) {
-        let ghost = P::GHOST;
         bldr.spawn_bundle(GridEntity {
             name: Name::new(P::NAME),
-            texture_atlas: self.get_atlas(&ghost),
+            texture_atlas: self.get_atlas(P::VALUE),
             grid: GridBundle::new(GRID, location, default()),
             ..default()
         })
         .insert_bundle(moving_left(location))
         .insert_bundle(GhostBundle {
             scatter_target: ScatterTarget(P::SCATTER),
-            ghost,
+            ghost: Ghost {
+                personality: P::VALUE,
+                ..default()
+            },
             personality,
             movement: MovementBundle {
                 speed: BASE_SPEED * 0.75,
@@ -117,7 +119,7 @@ impl FromWorld for GhostSpawner {
 }
 
 #[derive(Bundle, Default)]
-struct GhostBundle<P: Personality> {
+struct GhostBundle<P: PersonalityT> {
     pub scatter_target: ScatterTarget,
     pub ghost: Ghost,
     pub personality: P,

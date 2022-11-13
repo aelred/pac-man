@@ -2,19 +2,19 @@ use bevy::prelude::*;
 
 use crate::{actor::movement::Dir, actor::player::Player, grid::GridLocation, level::WIDTH_TILES};
 
-use super::{blinky::Blinky, ActiveGhost, Ghost, Mode, Personality, Target};
+use super::{blinky::Blinky, ActiveGhost, Mode, Personality, PersonalityT, Target};
 
 #[derive(Component, Default)]
 pub struct Inky;
 
-impl Personality for Inky {
+impl PersonalityT for Inky {
     const NAME: &'static str = "Inky";
     const COLOR: Color = Color::CYAN;
     const SCATTER: GridLocation = GridLocation {
         x: WIDTH_TILES as isize - 1,
         y: 0,
     };
-    const GHOST: Ghost = Ghost::Inky;
+    const VALUE: Personality = Personality::Inky;
 }
 
 pub fn chase(
