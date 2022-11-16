@@ -23,7 +23,7 @@ pub use pinky::Pinky;
 
 use self::house::InHouse;
 
-use super::movement::{MovementAmbiguity, SetDir, SetNextDir};
+use super::movement::{SetDir, SetNextDir};
 
 pub struct GhostPlugin;
 
@@ -33,16 +33,16 @@ impl Plugin for GhostPlugin {
             .add_system_set(
                 SystemSet::new()
                     .label(SetNextDir)
-                    .in_ambiguity_set(MovementAmbiguity)
+                    .label(GhostMovement)
                     .after(TickMode)
                     .before(SetGridLocation)
                     .with_system(choose_next_dir)
-                    .with_system(frightened),
+                    .with_system(frightened.ambiguous_with(choose_next_dir)),
             )
             .add_system_set(
                 SystemSet::new()
                     .label(SetTarget)
-                    .in_ambiguity_set(MovementAmbiguity)
+                    .label(GhostMovement)
                     .after(SetMode)
                     .after(SetGridLocation)
                     .with_system(blinky::chase)
@@ -65,6 +65,10 @@ impl Plugin for GhostPlugin {
 #[derive(SystemLabel)]
 pub struct SetTarget;
 
+#[derive(SystemLabel)]
+pub struct GhostMovement;
+
+#[derive(Resource)]
 pub struct GhostSpawner {
     blinky: Handle<TextureAtlas>,
     pinky: Handle<TextureAtlas>,
@@ -198,12 +202,14 @@ fn become_frightened(
     for entity in &mut query {
         commands
             .entity(entity)
-            .insert_bundle(FrightenedBundle {
-                food: Food { points: 200 },
-                ..default()
-            })
-            .insert(BASE_SPEED * 0.5)
-            .insert(assets.frightened.clone())
+            .insert((
+                FrightenedBundle {
+                    food: Food { points: 200 },
+                    ..default()
+                },
+                BASE_SPEED * 0.5,
+                assets.frightened.clone(),
+            ))
             .remove::<Target>();
     }
 }
@@ -221,10 +227,12 @@ fn stop_frightened(
     for (entity, ghost) in &mut query {
         commands
             .entity(entity)
-            .remove_bundle::<FrightenedBundle>()
-            .insert(BASE_SPEED * 0.75)
-            .insert(assets.get_atlas(ghost.personality))
-            .insert(Target::default());
+            .remove::<FrightenedBundle>()
+            .insert((
+                BASE_SPEED * 0.75,
+                assets.get_atlas(ghost.personality),
+                Target::default(),
+            ));
     }
 }
 
@@ -274,12 +282,14 @@ fn start_respawning_eaten_ghost(
 
             commands
                 .entity(*eaten)
-                .insert(Respawning)
-                .insert(target)
-                // This speed is just a guess
-                .insert(BASE_SPEED * 2.0)
-                .insert(assets.respawning.clone())
-                .remove_bundle::<FrightenedBundle>();
+                .insert((
+                    Respawning,
+                    target,
+                    // This speed is just a guess
+                    BASE_SPEED * 2.0,
+                    assets.respawning.clone(),
+                ))
+                .remove::<FrightenedBundle>();
 
             if let Some(dir) = closest_dir_to_target(&layout, *location, target, None) {
                 commands.entity(*eaten).insert(dir);
@@ -300,8 +310,7 @@ fn finish_respawning_eaten_ghost(
         if **start == *location {
             commands
                 .entity(entity)
-                .insert(BASE_SPEED * 0.75)
-                .insert(assets.get_atlas(ghost.personality))
+                .insert((BASE_SPEED * 0.75, assets.get_atlas(ghost.personality)))
                 .remove::<Respawning>();
         }
     }

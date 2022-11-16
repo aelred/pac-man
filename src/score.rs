@@ -19,6 +19,7 @@ pub struct UpdateScore;
 #[derive(SystemLabel)]
 pub struct UpdateHighScore;
 
+#[derive(Resource)]
 pub struct Score(u32);
 
 impl fmt::Display for Score {
@@ -33,6 +34,7 @@ impl AddAssign<u32> for Score {
     }
 }
 
+#[derive(Resource)]
 pub struct HighScore(u32);
 
 impl fmt::Display for HighScore {

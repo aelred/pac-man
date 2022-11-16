@@ -11,7 +11,7 @@ impl Plugin for FoodPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Eat>()
             // To prevent cycles, eating happens the frame after pac-man moves there
-            .add_system(eat.label(WriteEatEvent).in_ambiguity_set(WriteEatEvent))
+            .add_system(eat.label(WriteEatEvent))
             .add_system(add_score.after(WriteEatEvent).label(UpdateScore))
             .add_system(
                 eat_energizer
@@ -23,7 +23,7 @@ impl Plugin for FoodPlugin {
     }
 }
 
-#[derive(SystemLabel, AmbiguitySetLabel)]
+#[derive(SystemLabel)]
 pub struct WriteEatEvent;
 
 #[derive(Component, Default)]

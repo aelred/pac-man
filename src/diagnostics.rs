@@ -30,28 +30,32 @@ impl Plugin for InspectorPlugin {
             .add_system_set(
                 SystemSet::new()
                     .after(toggle_debug_mode)
-                    .in_ambiguity_set("debug_mode_so_who_cares")
-                    .with_system(toggle_inspector)
+                    .label(DebugSystem)
+                    // We don't care much about the ordering of debug stuff
+                    .with_system(toggle_inspector.ambiguous_with(DebugSystem))
                     .with_system(
                         trigger_eat_ghost
                             .label(WriteEatEvent)
-                            .in_ambiguity_set(WriteEatEvent),
+                            .ambiguous_with(WriteEatEvent)
+                            .ambiguous_with(DebugSystem),
                     )
-                    .with_system(draw_grid)
-                    .with_system(draw_dir.after(SetDir))
+                    .with_system(draw_grid.ambiguous_with(DebugSystem))
+                    .with_system(draw_dir.after(SetDir).ambiguous_with(DebugSystem))
                     .with_system(
                         draw_next_dir
                             .after(SetGridLocation)
                             .after(SetDir)
-                            .after(SetNextDir),
+                            .after(SetNextDir)
+                            .ambiguous_with(DebugSystem),
                     )
-                    .with_system(draw_target.after(SetTarget).after(draw_grid)),
+                    .with_system(
+                        draw_target
+                            .after(SetTarget)
+                            .after(draw_grid)
+                            .ambiguous_with(DebugSystem),
+                    ),
             )
-            .add_system(
-                trigger_death
-                    .label(PlayerDeath)
-                    .in_ambiguity_set(PlayerDeath),
-            )
+            .add_system(trigger_death.label(PlayerDeath).ambiguous_with(PlayerDeath))
             .add_system(trigger_frightened.before(SetMode))
             .register_inspectable::<NextDir>()
             .register_inspectable::<Dir>()
@@ -59,8 +63,11 @@ impl Plugin for InspectorPlugin {
     }
 }
 
-#[derive(Default)]
+#[derive(Resource, Default)]
 struct DebugMode(bool);
+
+#[derive(SystemLabel)]
+struct DebugSystem;
 
 fn toggle_debug_mode(mut debug_mode: ResMut<DebugMode>, keyboard_input: Res<Input<KeyCode>>) {
     if keyboard_input.just_pressed(KeyCode::Grave) {

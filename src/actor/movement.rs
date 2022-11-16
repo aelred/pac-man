@@ -13,8 +13,8 @@ pub struct MovementPlugin;
 
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(animate.in_ambiguity_set(Animate))
-            .add_system(set_sprite_direction.in_ambiguity_set(Animate).after(SetDir))
+        app.add_system(animate)
+            .add_system(set_sprite_direction.ambiguous_with(animate).after(SetDir))
             .add_system(
                 change_to_next_dir
                     .label(SetDir)
@@ -32,9 +32,6 @@ impl Plugin for MovementPlugin {
     }
 }
 
-#[derive(AmbiguitySetLabel)]
-struct Animate;
-
 #[derive(SystemLabel)]
 pub struct SetDir;
 
@@ -43,11 +40,6 @@ pub struct SetNextDir;
 
 #[derive(SystemLabel)]
 pub struct SetSpeed;
-
-/// Lots of systems set direction, target, etc. but they can run together because they
-/// operate in different circumstances (e.g. player, ghost state, ghost type)
-#[derive(AmbiguitySetLabel)]
-pub struct MovementAmbiguity;
 
 #[derive(Bundle, Default)]
 pub struct MovementBundle {
@@ -71,7 +63,7 @@ pub struct AnimationTimer(Timer);
 
 impl Default for AnimationTimer {
     fn default() -> Self {
-        Self(Timer::new(Duration::from_millis(200), true))
+        Self(Timer::new(Duration::from_millis(200), TimerMode::Repeating))
     }
 }
 

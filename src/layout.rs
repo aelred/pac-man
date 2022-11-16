@@ -13,6 +13,7 @@ impl Plugin for LayoutPlugin {
     }
 }
 
+#[derive(Resource)]
 pub struct Layout([[Option<Tile>; WIDTH_TILES]; HEIGHT_TILES]);
 
 impl Layout {

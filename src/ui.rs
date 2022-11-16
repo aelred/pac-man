@@ -6,8 +6,9 @@ use crate::level::GRID;
 use crate::score::{HighScore, Score, UpdateHighScore, UpdateScore};
 use crate::text::{Align, SetTextSprites, TextBundle, TextPlugin, TextSprites};
 use crate::HEIGHT_TILES;
+use bevy::math::Rect;
 use bevy::prelude::*;
-use bevy::sprite::{Anchor, Rect};
+use bevy::sprite::Anchor;
 
 pub struct UIPlugin;
 
@@ -17,18 +18,18 @@ impl Plugin for UIPlugin {
             .add_startup_system(setup_ui)
             .add_system_set(
                 SystemSet::new()
-                    .in_ambiguity_set(TextDisplay)
                     .after(SetTextSprites)
                     .with_system(update_score_display.after(UpdateScore))
-                    .with_system(update_high_score_display.after(UpdateHighScore)),
+                    .with_system(
+                        update_high_score_display
+                            .ambiguous_with(update_score_display)
+                            .after(UpdateHighScore),
+                    ),
             )
             .add_system(update_lives_display.after(UpdateLives))
             .init_resource::<UIAssets>();
     }
 }
-
-#[derive(AmbiguitySetLabel)]
-struct TextDisplay;
 
 #[derive(Component)]
 struct ScoreDisplay;
@@ -39,7 +40,7 @@ struct HighScoreDisplay;
 #[derive(Component)]
 struct LivesDisplay;
 
-#[derive(Deref, DerefMut)]
+#[derive(Resource, Deref, DerefMut)]
 struct UIAssets(Handle<TextureAtlas>);
 
 impl FromWorld for UIAssets {
@@ -62,71 +63,73 @@ impl FromWorld for UIAssets {
 
 fn setup_ui(mut commands: Commands) {
     commands
-        .spawn_bundle(SpatialBundle::default())
-        .insert(Name::new("UI"))
+        .spawn((SpatialBundle::default(), Name::new("UI")))
         .with_children(|builder| {
-            builder
-                .spawn_bundle(TextBundle {
+            builder.spawn((
+                TextBundle {
                     text: TextSprites {
                         string: "1UP   HIGH SCORE".to_string(),
                         ..default()
                     },
                     ..default()
-                })
-                .insert(Name::new("Static Text"))
-                .insert_bundle(GridBundle::new(
+                },
+                Name::new("Static Text"),
+                GridBundle::new(
                     GRID,
                     GridLocation {
                         x: 3,
                         y: HEIGHT_TILES as isize - 1,
                     },
                     Layer::UI,
-                ));
+                ),
+            ));
 
-            builder
-                .spawn_bundle(TextBundle {
+            builder.spawn((
+                TextBundle {
                     text: TextSprites {
                         align: Align::Right,
                         ..default()
                     },
                     ..default()
-                })
-                .insert_bundle(GridBundle::new(
+                },
+                GridBundle::new(
                     GRID,
                     GridLocation {
                         x: 6,
                         y: HEIGHT_TILES as isize - 2,
                     },
                     Layer::UI,
-                ))
-                .insert_bundle((Name::new("Score"), ScoreDisplay));
+                ),
+                Name::new("Score"),
+                ScoreDisplay,
+            ));
 
-            builder
-                .spawn_bundle(TextBundle {
+            builder.spawn((
+                TextBundle {
                     text: TextSprites {
                         align: Align::Right,
                         ..default()
                     },
                     ..default()
-                })
-                .insert_bundle(GridBundle::new(
+                },
+                GridBundle::new(
                     GRID,
                     GridLocation {
                         x: 16,
                         y: HEIGHT_TILES as isize - 2,
                     },
                     Layer::UI,
-                ))
-                .insert_bundle((Name::new("High Score"), HighScoreDisplay));
+                ),
+                Name::new("High Score"),
+                HighScoreDisplay,
+            ));
 
-            builder
-                .spawn_bundle(GridBundle::new(
-                    GRID,
-                    GridLocation { x: 2, y: 0 },
-                    Layer::UI,
-                ))
-                .insert_bundle(SpatialBundle::default())
-                .insert_bundle((Name::new("Lives"), LivesDisplay));
+            builder.spawn((
+                GridBundle::new(GRID, GridLocation { x: 2, y: 0 }, Layer::UI),
+                SpatialBundle::default(),
+                Name::new("Lives"),
+                LivesDisplay,
+            ));
         });
 }
 
@@ -175,24 +178,26 @@ fn update_lives_display(
             }
             Ordering::Less => commands.entity(entity).add_children(|bldr| {
                 for new_life in num_displayed_lives..num_lives {
-                    bldr.spawn_bundle(SpriteSheetBundle {
-                        texture_atlas: ui_assets.clone(),
-                        sprite: TextureAtlasSprite {
-                            index: 0,
-                            anchor: Anchor::Center,
+                    bldr.spawn((
+                        SpriteSheetBundle {
+                            texture_atlas: ui_assets.clone(),
+                            sprite: TextureAtlasSprite {
+                                index: 0,
+                                anchor: Anchor::Center,
+                                ..default()
+                            },
                             ..default()
                         },
-                        ..default()
-                    })
-                    .insert_bundle(GridBundle::new(
-                        GRID.center_offset() * 2.0,
-                        GridLocation {
-                            x: new_life as isize,
-                            y: 0,
-                        },
-                        default(),
-                    ))
-                    .insert(Name::new("Life"));
+                        GridBundle::new(
+                            GRID.center_offset() * 2.0,
+                            GridLocation {
+                                x: new_life as isize,
+                                y: 0,
+                            },
+                            default(),
+                        ),
+                        Name::new("Life"),
+                    ));
                 }
             }),
             Ordering::Equal => {}

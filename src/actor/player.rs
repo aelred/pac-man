@@ -4,8 +4,9 @@ use crate::actor::movement::{Dir, NextDir, SetNextDir, BASE_SPEED};
 use crate::grid::{GridLocation, SetGridLocation, Speed};
 use bevy::prelude::*;
 
+use super::ghost::GhostMovement;
 use super::mode::SetMode;
-use super::movement::{MovementAmbiguity, SetSpeed};
+use super::movement::SetSpeed;
 
 pub struct PlayerPlugin;
 
@@ -16,21 +17,20 @@ impl Plugin for PlayerPlugin {
             .add_system(
                 player_controls
                     .label(SetNextDir)
-                    .in_ambiguity_set(MovementAmbiguity)
+                    .ambiguous_with(GhostMovement)
                     .before(PlayerDeath),
             )
             .add_system(
                 die_when_touching_ghost
                     .label(PlayerDeath)
-                    .after(SetGridLocation)
-                    .in_ambiguity_set(PlayerDeath),
+                    .after(SetGridLocation),
             )
             .add_system(lose_life_when_dying.label(UpdateLives).after(PlayerDeath))
             .add_system(set_speed.label(SetSpeed).after(SetMode));
     }
 }
 
-#[derive(AmbiguitySetLabel, SystemLabel)]
+#[derive(SystemLabel)]
 pub struct PlayerDeath;
 
 #[derive(SystemLabel)]
@@ -39,7 +39,7 @@ pub struct UpdateLives;
 #[derive(Component)]
 pub struct Player;
 
-#[derive(Deref, DerefMut)]
+#[derive(Resource, Deref, DerefMut)]
 pub struct Lives(usize);
 
 impl Default for Lives {

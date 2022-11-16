@@ -34,8 +34,10 @@ impl FromEnv for WindowDescriptor {
             self.decorations = decorations;
         }
 
-        if let Some(position) = get_window_absolute_position().or_else(get_window_monitor) {
-            self.position = position;
+        self.position = get_window_absolute_position().unwrap_or(WindowPosition::Centered);
+
+        if let Some(monitor) = get_window_monitor() {
+            self.monitor = monitor;
         }
 
         self
@@ -60,16 +62,16 @@ fn get_window_absolute_position() -> Option<WindowPosition> {
     Some(WindowPosition::At(Vec2::new(window_x, window_y)))
 }
 
-fn get_window_monitor() -> Option<WindowPosition> {
+fn get_window_monitor() -> Option<MonitorSelection> {
     let window_monitor = std::env::var("WINDOW_MONITOR").ok()?;
 
-    let window_monitor = match window_monitor.to_lowercase().as_str() {
+    let monitor = match window_monitor.to_lowercase().as_str() {
         "current" => MonitorSelection::Current,
         "primary" => MonitorSelection::Primary,
-        x => MonitorSelection::Number(x.parse().ok()?),
+        x => MonitorSelection::Index(x.parse().ok()?),
     };
 
-    Some(WindowPosition::Centered(window_monitor))
+    Some(monitor)
 }
 
 impl FromEnv for LogDiagnosticsPlugin {

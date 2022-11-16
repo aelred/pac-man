@@ -27,7 +27,7 @@ pub struct TickMode;
 #[derive(SystemLabel)]
 pub struct SetMode;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Resource, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Mode {
     Scatter,
     Chase,
@@ -39,13 +39,14 @@ impl Default for Mode {
     }
 }
 
-#[derive(Default, PartialEq, Eq)]
+#[derive(Resource, Default, PartialEq, Eq)]
 pub enum FrightenedMode {
     #[default]
     Disabled,
     Enabled,
 }
 
+#[derive(Resource)]
 struct ModeTimer {
     index: usize,
     timer: Timer,
@@ -55,17 +56,20 @@ impl Default for ModeTimer {
     fn default() -> Self {
         Self {
             index: 0,
-            timer: Timer::new(Duration::from_secs_f32(MODE_TABLE[0].1), true),
+            timer: Timer::new(
+                Duration::from_secs_f32(MODE_TABLE[0].1),
+                TimerMode::Repeating,
+            ),
         }
     }
 }
 
-#[derive(Deref, DerefMut)]
+#[derive(Resource, Deref, DerefMut)]
 struct FrightenedTimer(Timer);
 
 impl Default for FrightenedTimer {
     fn default() -> Self {
-        let mut timer = Timer::new(Duration::from_secs_f32(6.0), false);
+        let mut timer = Timer::new(Duration::from_secs_f32(6.0), TimerMode::Once);
         timer.pause();
         FrightenedTimer(timer)
     }

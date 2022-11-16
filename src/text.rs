@@ -40,7 +40,7 @@ pub enum Align {
     Right,
 }
 
-#[derive(Component, Deref)]
+#[derive(Resource, Deref)]
 struct FontHandle(Handle<TextureAtlas>);
 
 impl FromWorld for FontHandle {
@@ -48,7 +48,7 @@ impl FromWorld for FontHandle {
         let asset_server: &AssetServer = world.resource();
         let sheet = asset_server.load("font.png");
         let mut texture_atlases: Mut<Assets<TextureAtlas>> = world.resource_mut();
-        let atlas = TextureAtlas::from_grid(sheet, Vec2::splat(FONT_SIZE), 16, 28);
+        let atlas = TextureAtlas::from_grid(sheet, Vec2::splat(FONT_SIZE), 16, 28, None, None);
         let handle = texture_atlases.add(atlas);
         Self(handle)
     }
@@ -75,14 +75,15 @@ fn set_sprites(
                 if char != ' ' {
                     let index = FONT_LOOKUP.get(&char).unwrap();
 
-                    builder
-                        .spawn_bundle(SpriteSheetBundle {
+                    builder.spawn((
+                        SpriteSheetBundle {
                             sprite: TextureAtlasSprite::new(*index),
                             texture_atlas: font.clone(),
                             transform: Transform::from_translation(translation),
                             ..default()
-                        })
-                        .insert(Name::new(char.to_string()));
+                        },
+                        Name::new(char.to_string()),
+                    ));
                 }
 
                 translation += FONT_SHIFT;

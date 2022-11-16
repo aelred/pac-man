@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::Rect};
+use bevy::{math::Rect, prelude::*};
 
 use crate::{
     actor::movement::{moving_left, MovementBundle, NextDir, BASE_SPEED},
@@ -15,26 +15,27 @@ impl GhostSpawner {
         personality: P,
         location: GridLocation,
     ) {
-        bldr.spawn_bundle(GridEntity {
-            name: Name::new(P::NAME),
-            texture_atlas: self.get_atlas(P::VALUE),
-            grid: GridBundle::new(GRID, location, default()),
-            ..default()
-        })
-        .insert_bundle(moving_left(location))
-        .insert_bundle(GhostBundle {
-            scatter_target: ScatterTarget(P::SCATTER),
-            ghost: Ghost {
-                personality: P::VALUE,
+        bldr.spawn((
+            GridEntity {
+                name: Name::new(P::NAME),
+                texture_atlas: self.get_atlas(P::VALUE),
+                grid: GridBundle::new(GRID, location, default()),
                 ..default()
             },
-            personality,
-            movement: MovementBundle {
-                speed: BASE_SPEED * 0.75,
+            moving_left(location),
+            GhostBundle {
+                scatter_target: ScatterTarget(P::SCATTER),
+                ghost: Ghost {
+                    personality: P::VALUE,
+                },
+                personality,
+                movement: MovementBundle {
+                    speed: BASE_SPEED * 0.75,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        });
+        ));
     }
 }
 
@@ -47,40 +48,40 @@ impl FromWorld for GhostSpawner {
 
         let tile_size = Vec2::splat(16.0);
 
-        let blinky_atlas = TextureAtlas::from_grid_with_padding(
+        let blinky_atlas = TextureAtlas::from_grid(
             sheet.clone(),
             tile_size,
             8,
             1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 64.0),
+            None,
+            Some(Vec2::new(456.0, 64.0)),
         );
 
-        let pinky_atlas = TextureAtlas::from_grid_with_padding(
+        let pinky_atlas = TextureAtlas::from_grid(
             sheet.clone(),
             Vec2::splat(16.0),
             8,
             1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 80.0),
+            None,
+            Some(Vec2::new(456.0, 80.0)),
         );
 
-        let inky_atlas = TextureAtlas::from_grid_with_padding(
+        let inky_atlas = TextureAtlas::from_grid(
             sheet.clone(),
             Vec2::splat(16.0),
             8,
             1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 96.0),
+            None,
+            Some(Vec2::new(456.0, 96.0)),
         );
 
-        let clyde_atlas = TextureAtlas::from_grid_with_padding(
+        let clyde_atlas = TextureAtlas::from_grid(
             sheet.clone(),
             Vec2::splat(16.0),
             8,
             1,
-            Vec2::ZERO,
-            Vec2::new(456.0, 112.0),
+            None,
+            Some(Vec2::new(456.0, 112.0)),
         );
 
         let mut frightened_atlas = TextureAtlas::new_empty(sheet.clone(), Vec2::new(680.0, 248.0));

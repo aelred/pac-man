@@ -4,8 +4,8 @@ use crate::actor::player::{Player, PlayerDeath, PlayerDied};
 use crate::food::{Energizer, Food};
 use crate::grid::{Grid, GridBundle, GridLocation, Layer, SetGridMoving};
 use crate::layout::{Layout, Tile};
+use bevy::math::Rect;
 use bevy::prelude::*;
-use bevy::sprite::Rect;
 
 pub const WIDTH_TILES: usize = 28;
 pub const HEIGHT_TILES: usize = 36;
@@ -36,6 +36,7 @@ impl Plugin for LevelPlugin {
     }
 }
 
+#[derive(Resource)]
 struct LevelAssets {
     pac_man: Handle<TextureAtlas>,
     objects: Handle<TextureAtlas>,
@@ -48,13 +49,13 @@ impl FromWorld for LevelAssets {
 
         let mut texture_atlases: Mut<Assets<TextureAtlas>> = world.resource_mut();
 
-        let pac_man_atlas = TextureAtlas::from_grid_with_padding(
+        let pac_man_atlas = TextureAtlas::from_grid(
             sheet.clone(),
             Vec2::splat(16.0),
             2,
             4,
-            Vec2::ZERO,
-            Vec2::new(456.0, 0.0),
+            None,
+            Some(Vec2::new(456.0, 0.0)),
         );
 
         let mut object_atlas = TextureAtlas::new_empty(sheet, Vec2::new(680.0, 248.0));
@@ -95,12 +96,12 @@ fn setup_background(
 
     let background_handle = texture_atlases.add(background_atlas);
 
-    commands
-        .spawn_bundle(SpriteSheetBundle {
+    commands.spawn((
+        SpriteSheetBundle {
             texture_atlas: background_handle,
             ..default()
-        })
-        .insert_bundle(GridBundle::new(
+        },
+        GridBundle::new(
             Grid {
                 size: Vec2::splat(GRID_SIZE),
                 offset: Vec2::new(
@@ -113,8 +114,9 @@ fn setup_background(
                 y: BOTTOM_MARGIN as isize,
             },
             Layer::BACKGROUND,
-        ))
-        .insert(Name::new("Background"));
+        ),
+        Name::new("Background"),
+    ));
 }
 
 fn create_level(
@@ -124,8 +126,7 @@ fn create_level(
     ghosts: Res<GhostSpawner>,
 ) {
     commands
-        .spawn_bundle(SpatialBundle::default())
-        .insert(Name::new("Level"))
+        .spawn((SpatialBundle::default(), Name::new("Level")))
         .with_children(|bldr| spawn_level_entities(bldr, &layout, &level_assets, &ghosts));
 }
 
@@ -138,7 +139,7 @@ fn reset_level_when_player_dies(
         for (entity, start_location) in &query {
             commands
                 .entity(entity)
-                .insert_bundle(moving_left(**start_location));
+                .insert(moving_left(**start_location));
         }
     }
 }
@@ -186,19 +187,21 @@ pub struct GridEntity {
 }
 
 fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_assets: &LevelAssets) {
-    commands
-        .spawn_bundle(GridEntity {
+    commands.spawn((
+        GridEntity {
             name: Name::new("Pac-Man"),
             texture_atlas: level_assets.pac_man.clone(),
             grid: GridBundle::new(GRID, location, default()),
             ..default()
-        })
-        .insert_bundle(MovementBundle {
+        },
+        MovementBundle {
             speed: BASE_SPEED * 0.8,
             ..default()
-        })
-        .insert_bundle(moving_left(location))
-        .insert_bundle((NextDir::default(), Player));
+        },
+        moving_left(location),
+        NextDir::default(),
+        Player,
+    ));
 }
 
 fn spawn_food(
@@ -210,14 +213,15 @@ fn spawn_food(
     points: u32,
     bundle: impl Bundle,
 ) {
-    commands
-        .spawn_bundle(GridEntity {
+    commands.spawn((
+        GridEntity {
             name: Name::new(name),
             sprite: TextureAtlasSprite::new(sprite_index),
             texture_atlas: level_assets.objects.clone(),
             grid: GridBundle::new(GRID, location, Layer(4.0)),
             ..default()
-        })
-        .insert(Food { points })
-        .insert_bundle(bundle);
+        },
+        Food { points },
+        bundle,
+    ));
 }

@@ -21,27 +21,29 @@ use actor::ghost::GhostPlugin;
 use actor::mode::ModePlugin;
 use bevy::app::AppExit;
 use bevy::prelude::*;
-use bevy::render::camera::{DepthCalculation, ScalingMode};
-use bevy::render::texture::ImageSettings;
+use bevy::render::camera::ScalingMode;
 use from_env::FromEnv;
 use layout::LayoutPlugin;
 use level::GRID_SIZE;
 
 fn main() {
     App::new()
-        .insert_resource(
-            WindowDescriptor {
-                width: WIDTH * SCALE,
-                height: HEIGHT * SCALE,
-                ..default()
-            }
-            .with_env_overrides(),
-        )
-        .insert_resource(ImageSettings::default_nearest())
         .insert_resource(ClearColor(Color::BLACK))
         .add_startup_system(setup_camera)
         .add_system(exit_game)
-        .add_plugins(DefaultPlugins)
+        .add_plugins(
+            DefaultPlugins
+                .set(ImagePlugin::default_nearest())
+                .set(WindowPlugin {
+                    window: WindowDescriptor {
+                        width: WIDTH * SCALE,
+                        height: HEIGHT * SCALE,
+                        ..default()
+                    }
+                    .with_env_overrides(),
+                    ..default()
+                }),
+        )
         .add_plugin(GridPlugin)
         .add_plugin(UIPlugin)
         .add_plugin(InspectorPlugin)
@@ -57,14 +59,13 @@ fn main() {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle {
+    commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             scaling_mode: ScalingMode::Auto {
                 min_width: WIDTH,
                 min_height: HEIGHT,
             },
             far: 1000.0,
-            depth_calculation: DepthCalculation::ZDifference,
             ..default()
         },
         transform: Transform::from_xyz(
