@@ -15,27 +15,25 @@ impl GhostSpawner {
         personality: P,
         location: GridLocation,
     ) {
-        bldr.spawn((
-            GridEntity {
-                name: Name::new(P::NAME),
-                texture_atlas: self.get_atlas(P::VALUE),
-                grid: GridBundle::new(GRID, location, default()),
+        bldr.spawn(GridEntity {
+            name: Name::new(P::NAME),
+            texture_atlas: self.get_atlas(P::VALUE),
+            grid: GridBundle::new(GRID, location, default()),
+            ..default()
+        })
+        .insert(moving_left(location))
+        .insert(GhostBundle {
+            scatter_target: ScatterTarget(P::SCATTER),
+            ghost: Ghost {
+                personality: P::VALUE,
+            },
+            personality,
+            movement: MovementBundle {
+                speed: BASE_SPEED * 0.75,
                 ..default()
             },
-            moving_left(location),
-            GhostBundle {
-                scatter_target: ScatterTarget(P::SCATTER),
-                ghost: Ghost {
-                    personality: P::VALUE,
-                },
-                personality,
-                movement: MovementBundle {
-                    speed: BASE_SPEED * 0.75,
-                    ..default()
-                },
-                ..default()
-            },
-        ));
+            ..default()
+        });
     }
 }
 

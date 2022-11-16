@@ -65,68 +65,71 @@ fn setup_ui(mut commands: Commands) {
     commands
         .spawn((SpatialBundle::default(), Name::new("UI")))
         .with_children(|builder| {
-            builder.spawn((
-                TextBundle {
-                    text: TextSprites {
-                        string: "1UP   HIGH SCORE".to_string(),
+            builder
+                .spawn((
+                    TextBundle {
+                        text: TextSprites {
+                            string: "1UP   HIGH SCORE".to_string(),
+                            ..default()
+                        },
                         ..default()
                     },
-                    ..default()
-                },
-                Name::new("Static Text"),
-                GridBundle::new(
+                    Name::new("Static Text"),
+                ))
+                .insert(GridBundle::new(
                     GRID,
                     GridLocation {
                         x: 3,
                         y: HEIGHT_TILES as isize - 1,
                     },
                     Layer::UI,
-                ),
-            ));
+                ));
 
-            builder.spawn((
-                TextBundle {
+            builder
+                .spawn(TextBundle {
                     text: TextSprites {
                         align: Align::Right,
                         ..default()
                     },
                     ..default()
-                },
-                GridBundle::new(
-                    GRID,
-                    GridLocation {
-                        x: 6,
-                        y: HEIGHT_TILES as isize - 2,
-                    },
-                    Layer::UI,
-                ),
-                Name::new("Score"),
-                ScoreDisplay,
-            ));
+                })
+                .insert((
+                    GridBundle::new(
+                        GRID,
+                        GridLocation {
+                            x: 6,
+                            y: HEIGHT_TILES as isize - 2,
+                        },
+                        Layer::UI,
+                    ),
+                    Name::new("Score"),
+                    ScoreDisplay,
+                ));
 
-            builder.spawn((
-                TextBundle {
+            builder
+                .spawn(TextBundle {
                     text: TextSprites {
                         align: Align::Right,
                         ..default()
                     },
                     ..default()
-                },
-                GridBundle::new(
-                    GRID,
-                    GridLocation {
-                        x: 16,
-                        y: HEIGHT_TILES as isize - 2,
-                    },
-                    Layer::UI,
-                ),
-                Name::new("High Score"),
-                HighScoreDisplay,
-            ));
+                })
+                .insert((
+                    GridBundle::new(
+                        GRID,
+                        GridLocation {
+                            x: 16,
+                            y: HEIGHT_TILES as isize - 2,
+                        },
+                        Layer::UI,
+                    ),
+                    Name::new("High Score"),
+                    HighScoreDisplay,
+                ));
 
             builder.spawn((
                 GridBundle::new(GRID, GridLocation { x: 2, y: 0 }, Layer::UI),
-                SpatialBundle::default(),
+                VisibilityBundle::default(),
                 Name::new("Lives"),
                 LivesDisplay,
             ));
@@ -178,16 +181,16 @@ fn update_lives_display(
             }
             Ordering::Less => commands.entity(entity).add_children(|bldr| {
                 for new_life in num_displayed_lives..num_lives {
-                    bldr.spawn((
-                        SpriteSheetBundle {
-                            texture_atlas: ui_assets.clone(),
-                            sprite: TextureAtlasSprite {
-                                index: 0,
-                                anchor: Anchor::Center,
-                                ..default()
-                            },
+                    bldr.spawn(SpriteSheetBundle {
+                        texture_atlas: ui_assets.clone(),
+                        sprite: TextureAtlasSprite {
+                            index: 0,
+                            anchor: Anchor::Center,
                             ..default()
                         },
+                        ..default()
+                    })
+                    .insert((
                         GridBundle::new(
                             GRID.center_offset() * 2.0,
                             GridLocation {

@@ -96,27 +96,28 @@ fn setup_background(
 
     let background_handle = texture_atlases.add(background_atlas);
 
-    commands.spawn((
-        SpriteSheetBundle {
+    commands
+        .spawn(SpriteSheetBundle {
             texture_atlas: background_handle,
             ..default()
-        },
-        GridBundle::new(
-            Grid {
-                size: Vec2::splat(GRID_SIZE),
-                offset: Vec2::new(
-                    (WIDTH - GRID_SIZE) / 2.0,
-                    (BACKGROUND_HEIGHT - GRID_SIZE) / 2.0,
-                ),
-            },
-            GridLocation {
-                x: 0,
-                y: BOTTOM_MARGIN as isize,
-            },
-            Layer::BACKGROUND,
-        ),
-        Name::new("Background"),
-    ));
+        })
+        .insert((
+            GridBundle::new(
+                Grid {
+                    size: Vec2::splat(GRID_SIZE),
+                    offset: Vec2::new(
+                        (WIDTH - GRID_SIZE) / 2.0,
+                        (BACKGROUND_HEIGHT - GRID_SIZE) / 2.0,
+                    ),
+                },
+                GridLocation {
+                    x: 0,
+                    y: BOTTOM_MARGIN as isize,
+                },
+                Layer::BACKGROUND,
+            ),
+            Name::new("Background"),
+        ));
 }
 
 fn create_level(
@@ -187,21 +188,22 @@ pub struct GridEntity {
 }
 
 fn spawn_pac_man(commands: &mut ChildBuilder, location: GridLocation, level_assets: &LevelAssets) {
-    commands.spawn((
-        GridEntity {
-            name: Name::new("Pac-Man"),
-            texture_atlas: level_assets.pac_man.clone(),
-            grid: GridBundle::new(GRID, location, default()),
-            ..default()
-        },
-        MovementBundle {
-            speed: BASE_SPEED * 0.8,
-            ..default()
-        },
-        moving_left(location),
-        NextDir::default(),
-        Player,
-    ));
+    commands
+        .spawn((
+            GridEntity {
+                name: Name::new("Pac-Man"),
+                texture_atlas: level_assets.pac_man.clone(),
+                grid: GridBundle::new(GRID, location, default()),
+                ..default()
+            },
+            MovementBundle {
+                speed: BASE_SPEED * 0.8,
+                ..default()
+            },
+            NextDir::default(),
+            Player,
+        ))
+        .insert(moving_left(location));
 }
 
 fn spawn_food(
