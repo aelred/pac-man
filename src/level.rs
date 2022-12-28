@@ -181,9 +181,7 @@ pub struct GridEntity {
     pub name: Name,
     pub sprite: TextureAtlasSprite,
     pub texture_atlas: Handle<TextureAtlas>,
-    #[bundle]
     pub grid: GridBundle,
-    #[bundle]
     pub _visiblity: VisibilityBundle,
 }
 

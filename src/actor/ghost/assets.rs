@@ -1,7 +1,7 @@
 use bevy::{math::Rect, prelude::*};
 
 use crate::{
-    actor::movement::{moving_left, MovementBundle, NextDir, BASE_SPEED},
+    actor::movement::{moving_left, MovementBundle, BASE_SPEED},
     grid::{GridBundle, GridLocation},
     level::{GridEntity, GRID},
 };
@@ -15,25 +15,25 @@ impl GhostSpawner {
         personality: P,
         location: GridLocation,
     ) {
-        bldr.spawn(GridEntity {
-            name: Name::new(P::NAME),
-            texture_atlas: self.get_atlas(P::VALUE),
-            grid: GridBundle::new(GRID, location, default()),
-            ..default()
-        })
-        .insert(moving_left(location))
-        .insert(GhostBundle {
-            scatter_target: ScatterTarget(P::SCATTER),
-            ghost: Ghost {
+        bldr.spawn((
+            ScatterTarget(P::SCATTER),
+            Ghost {
                 personality: P::VALUE,
             },
             personality,
-            movement: MovementBundle {
+            GridEntity {
+                name: Name::new(P::NAME),
+                texture_atlas: self.get_atlas(P::VALUE),
+                grid: GridBundle::new(GRID, location, default()),
+                ..default()
+            },
+            MovementBundle {
                 speed: BASE_SPEED * 0.75,
                 ..default()
             },
-            ..default()
-        });
+            Target::default(),
+        ))
+        .insert(moving_left(location));
     }
 }
 
@@ -115,15 +115,4 @@ impl FromWorld for GhostSpawner {
             respawning: texture_atlases.add(respawning_atlas),
         }
     }
-}
-
-#[derive(Bundle, Default)]
-struct GhostBundle<P: PersonalityT> {
-    pub scatter_target: ScatterTarget,
-    pub ghost: Ghost,
-    pub personality: P,
-    pub next_dir: NextDir,
-    #[bundle]
-    pub movement: MovementBundle,
-    pub _target: Target,
 }
